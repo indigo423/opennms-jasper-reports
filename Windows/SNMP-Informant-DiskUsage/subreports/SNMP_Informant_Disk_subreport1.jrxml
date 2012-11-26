@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="SNMP_Informant_Disk_subreport1" pageWidth="555" pageHeight="802" whenNoDataType="NoDataSection" columnWidth="555" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<style name="Threshold-Style" backcolor="#FFFFFF" vAlign="Middle">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{USED_PERCENT} >= $P{CRITICAL}]]></conditionExpression>
+			<style backcolor="#ED7979"/>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$V{USED_PERCENT} >= $P{WARNING}]]></conditionExpression>
+			<style backcolor="#FCF4AA"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="startDate" class="java.util.Date" isForPrompting="false">
+		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+	</parameter>
+	<parameter name="endDate" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date(1290120600000L)]]></defaultValueExpression>
+	</parameter>
+	<parameter name="rrdDir" class="java.lang.String"/>
+	<parameter name="nodelabel" class="java.lang.String" isForPrompting="false"/>
+	<parameter name="nodeid" class="java.lang.Integer" isForPrompting="false"/>
+	<parameter name="WARNING" class="java.lang.Double" isForPrompting="false">
+		<defaultValueExpression><![CDATA[Double.valueOf("80.0")]]></defaultValueExpression>
+	</parameter>
+	<parameter name="CRITICAL" class="java.lang.Double" isForPrompting="false">
+		<defaultValueExpression><![CDATA[Double.valueOf("90.0")]]></defaultValueExpression>
+	</parameter>
+	<parameter name="driveLetter" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["C"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="driveLetterAscii" class="java.lang.Integer" isForPrompting="false"/>
+	<queryString language="jrobin">
+		<![CDATA[--start $P{startDate} --end $P{endDate}
+  DEF:free=$P{rrdDir}/snmp/$P{nodeid}/sinfLDskInstance/2.$P{driveLetterAscii}.58/sinfLDskPctFreeSpc.jrb:sinfLDskPctFreeSpc:AVERAGE
+  DEF:mbytes=$P{rrdDir}/snmp/$P{nodeid}/sinfLDskInstance/2.$P{driveLetterAscii}.58/sinfLDskFreeMbytes.jrb:sinfLDskFreeMbytes:AVERAGE
+  XPORT:free:sinfLDskPctFreeSpc
+  XPORT:mbytes:sinfLDskFreeMbytes]]>
+	</queryString>
+	<field name="Timestamp" class="java.util.Date">
+		<fieldDescription><![CDATA[Timestamp]]></fieldDescription>
+	</field>
+	<field name="sinfLDskPctFreeSpc" class="java.lang.Double">
+		<fieldDescription><![CDATA[sinfLDskPctFreeSpc]]></fieldDescription>
+	</field>
+	<field name="sinfLDskFreeMbytes" class="java.lang.Double">
+		<fieldDescription><![CDATA[sinfLDskFreeMbytes]]></fieldDescription>
+	</field>
+	<variable name="FREE_PERCENT" class="java.lang.Double">
+		<variableExpression><![CDATA[$F{sinfLDskPctFreeSpc}]]></variableExpression>
+	</variable>
+	<variable name="USED_PERCENT" class="java.lang.Double">
+		<variableExpression><![CDATA[Double.valueOf("100.0") - $F{sinfLDskPctFreeSpc}]]></variableExpression>
+	</variable>
+	<variable name="FREE_GBYTES" class="java.lang.Double">
+		<variableExpression><![CDATA[$F{sinfLDskFreeMbytes}/Double.valueOf("1024.0")]]></variableExpression>
+	</variable>
+	<variable name="USED_GBYTES" class="java.lang.Double">
+		<variableExpression><![CDATA[($F{sinfLDskFreeMbytes} * Double.valueOf("100.0") / $F{sinfLDskPctFreeSpc})/Double.valueOf("1024.0")]]></variableExpression>
+	</variable>
+	<filterExpression><![CDATA[!$F{sinfLDskPctFreeSpc}.isNaN()]]></filterExpression>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="15" splitType="Stretch">
+			<textField pattern="###0.00">
+				<reportElement style="Threshold-Style" mode="Opaque" x="415" y="0" width="70" height="15"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression class="java.lang.Double"><![CDATA[$V{FREE_PERCENT}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00">
+				<reportElement style="Threshold-Style" mode="Opaque" x="485" y="0" width="70" height="15"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression class="java.lang.Double"><![CDATA[$V{USED_PERCENT}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Threshold-Style" mode="Opaque" x="179" y="0" width="96" height="15"/>
+				<textElement textAlignment="Left"/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{driveLetter} + ":\\"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Threshold-Style" mode="Opaque" x="3" y="0" width="176" height="15"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{nodelabel}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00" isBlankWhenNull="true">
+				<reportElement style="Threshold-Style" mode="Opaque" x="275" y="0" width="70" height="15"/>
+				<textElement textAlignment="Center">
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Double"><![CDATA[$V{FREE_GBYTES}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00" isBlankWhenNull="true">
+				<reportElement style="Threshold-Style" mode="Opaque" x="345" y="0" width="70" height="15"/>
+				<textElement textAlignment="Center">
+					<font size="10"/>
+				</textElement>
+				<textFieldExpression class="java.lang.Double"><![CDATA[$V{USED_GBYTES}]]></textFieldExpression>
+			</textField>
+		</band>
+	</summary>
+	<noData>
+		<band height="15">
+			<textField>
+				<reportElement style="Threshold-Style" mode="Opaque" x="3" y="0" width="176" height="15"/>
+				<textElement verticalAlignment="Middle">
+					<font isItalic="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{nodelabel}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Threshold-Style" mode="Opaque" x="179" y="0" width="376" height="15" forecolor="#C4A000"/>
+				<textElement textAlignment="Left">
+					<font isItalic="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{driveLetter} + ":\\ No SNMP Informant data available"]]></textFieldExpression>
+			</textField>
+		</band>
+	</noData>
+</jasperReport>
