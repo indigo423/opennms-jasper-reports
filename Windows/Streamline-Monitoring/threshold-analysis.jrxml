@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="threshold-analysis" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isTitleNewPage="true">
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="560"/>
+	<property name="ireport.y" value="0"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -373,7 +373,7 @@ ORDER BY
 			<staticText>
 				<reportElement style="Title" x="0" y="0" width="391" height="34"/>
 				<textElement/>
-				<text><![CDATA[Thresholds & Notifications]]></text>
+				<text><![CDATA[Threshold Analysis Report]]></text>
 			</staticText>
 			<textField>
 				<reportElement style="Sub-sub-sub-header" x="35" y="34" width="356" height="15" isPrintWhenDetailOverflows="true"/>
@@ -477,7 +477,7 @@ ORDER BY
 			<staticText>
 				<reportElement style="Title" x="0" y="0" width="391" height="34"/>
 				<textElement/>
-				<text><![CDATA[Thresholds & Notifications]]></text>
+				<text><![CDATA[Threshold Analysis Report]]></text>
 			</staticText>
 			<line>
 				<reportElement x="0" y="54" width="555" height="1"/>
@@ -534,7 +534,7 @@ ORDER BY
 						<seriesColor seriesOrder="2" color="#CC0000"/>
 					</plot>
 					<categoryAxisFormat labelRotation="45.0">
-						<axisFormat tickLabelMask="">
+						<axisFormat>
 							<labelFont>
 								<font size="8"/>
 							</labelFont>
