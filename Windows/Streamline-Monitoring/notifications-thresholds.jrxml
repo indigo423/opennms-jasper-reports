@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="notification-thresholds" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isTitleNewPage="true">
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="689"/>
+	<property name="ireport.y" value="560"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -218,7 +218,12 @@ ORDER BY
   WHEN thresholdEvents.type = '{process}' THEN cast('Process' AS TEXT)
   ELSE cast('unknown' AS TEXT)
   END as type,
-  thresholdEvents.severity,
+  CASE
+  WHEN thresholdEvents.severity = '{warning}' THEN cast('Warning' AS TEXT)
+  WHEN thresholdEvents.severity = '{minor}' THEN cast('Minor' AS TEXT)
+  WHEN thresholdEvents.severity = '{major}' THEN cast('Major' AS TEXT)
+  ELSE cast('unknown' AS TEXT)
+  END as severity,
   public.node.nodelabel
 FROM
     (SELECT
@@ -288,7 +293,7 @@ ORDER BY
 		<band splitType="Stretch"/>
 	</background>
 	<title>
-		<band height="588" splitType="Stretch">
+		<band height="622" splitType="Stretch">
 			<rectangle radius="5">
 				<reportElement mode="Opaque" x="0" y="55" width="555" height="20" backcolor="#009700"/>
 				<graphicElement>
@@ -297,7 +302,7 @@ ORDER BY
 			</rectangle>
 			<stackedAreaChart>
 				<chart>
-					<reportElement x="0" y="85" width="555" height="230"/>
+					<reportElement x="0" y="85" width="555" height="240"/>
 					<chartTitle position="Top">
 						<font size="10" isBold="true"/>
 						<titleExpression><![CDATA["Total threshold per hour"]]></titleExpression>
@@ -381,19 +386,19 @@ ORDER BY
 				<text><![CDATA[Date: ]]></text>
 			</staticText>
 			<rectangle radius="5">
-				<reportElement mode="Opaque" x="0" y="328" width="554" height="20" backcolor="#009700"/>
+				<reportElement mode="Opaque" x="0" y="338" width="554" height="20" backcolor="#009700"/>
 				<graphicElement>
 					<pen lineWidth="0.0"/>
 				</graphicElement>
 			</rectangle>
 			<staticText>
-				<reportElement style="Section" x="5" y="328" width="545" height="20"/>
+				<reportElement style="Section" x="5" y="338" width="545" height="20"/>
 				<textElement/>
 				<text><![CDATA[Top 20 average thresholds per hour (tph) by node]]></text>
 			</staticText>
 			<lineChart>
 				<chart isShowLegend="false">
-					<reportElement positionType="Float" x="0" y="357" width="555" height="230"/>
+					<reportElement positionType="Float" x="0" y="367" width="555" height="250"/>
 					<chartTitle>
 						<font size="10" isBold="true"/>
 						<titleExpression><![CDATA["Top 20 nodes"]]></titleExpression>
@@ -454,7 +459,7 @@ ORDER BY
 		</band>
 	</title>
 	<pageHeader>
-		<band height="60" splitType="Stretch">
+		<band height="61" splitType="Stretch">
 			<image>
 				<reportElement x="391" y="0" width="164" height="49"/>
 				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
@@ -486,10 +491,10 @@ ORDER BY
 		<band splitType="Stretch"/>
 	</columnHeader>
 	<detail>
-		<band height="669" splitType="Stretch">
+		<band height="538" splitType="Stretch">
 			<stackedAreaChart>
 				<chart>
-					<reportElement x="0" y="30" width="555" height="230"/>
+					<reportElement x="0" y="30" width="555" height="240"/>
 					<chartTitle>
 						<font size="10" isBold="true"/>
 						<titleExpression><![CDATA["Threshold per hour"]]></titleExpression>
@@ -560,11 +565,11 @@ ORDER BY
 			<textField>
 				<reportElement style="Section" x="5" y="0" width="545" height="20"/>
 				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA["Threshold per hour (tph): " + $F{type}]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA["Threshold per hour (tph) by threshold type " + $F{type}]]></textFieldExpression>
 			</textField>
 			<stackedBarChart>
 				<chart>
-					<reportElement x="0" y="265" width="555" height="230"/>
+					<reportElement x="0" y="282" width="555" height="250"/>
 					<chartTitle>
 						<font size="10" isBold="true" isItalic="false"/>
 						<titleExpression><![CDATA["Top 20 nodes"]]></titleExpression>
