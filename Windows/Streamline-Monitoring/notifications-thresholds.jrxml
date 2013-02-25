@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="notification-thresholds" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isTitleNewPage="true">
+	<property name="ireport.zoom" value="1.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="33"/>
+	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 2">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 2_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 2_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 2_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<subDataset name="total-avg-tph">
+		<parameter name="DAYS" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("14")]]></defaultValueExpression>
+		</parameter>
+		<queryString>
+			<![CDATA[SELECT
+  count(eventuei)::FLOAT/24::FLOAT AS tph,
+  CASE
+    WHEN thresholdEvents.type = '{cpu}' THEN cast('CPU' AS TEXT)
+    WHEN thresholdEvents.type = '{connection}' THEN cast('Connection' AS TEXT)
+    WHEN thresholdEvents.type = '{disk}' THEN cast('Disk' AS TEXT)
+    WHEN thresholdEvents.type = '{memory}' THEN cast('Memory' AS TEXT)
+    WHEN thresholdEvents.type = '{bandwidth}' THEN cast('Bandwidth' AS TEXT)
+    WHEN thresholdEvents.type = '{uptime}' THEN cast('Uptime' AS TEXT)
+    WHEN thresholdEvents.type = '{process}' THEN cast('Process' AS TEXT)
+    ELSE cast('unknown' AS TEXT)
+  END as type,
+  thresholdEvents.time
+FROM
+  (SELECT
+     public.events.eventuei,
+     regexp_matches(public.events.eventuei, '.*(cpu|connection|disk|memory|bandwidth|uptime|process).*')::TEXT AS type,
+     to_date(to_char(public.events.eventtime, 'DD-MM-YYYY'), 'DD-MM-YYYY'::TEXT)  AS time
+   FROM
+     public.events
+   WHERE
+     public.events.eventuei LIKE '%bd%exceeded%' AND
+     eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
+GROUP BY
+  thresholdEvents.time,
+  thresholdEvents.type
+ORDER BY
+  time ASC,
+  thresholdEvents.type]]>
+		</queryString>
+		<field name="tph" class="java.lang.Double"/>
+		<field name="type" class="java.lang.String"/>
+		<field name="time" class="java.sql.Date"/>
+		<group name="time">
+			<groupExpression><![CDATA[$F{time}]]></groupExpression>
+		</group>
+	</subDataset>
+	<subDataset name="top20-nodes-tph">
+		<parameter name="DAYS" class="java.lang.Integer">
+			<defaultValueExpression><![CDATA[Integer.valueOf("14")]]></defaultValueExpression>
+		</parameter>
+		<queryString>
+			<![CDATA[SELECT
+  count(eventuei)::FLOAT/24::FLOAT AS tph,
+  public.node.nodelabel
+FROM
+  (SELECT
+     public.events.nodeid,
+     public.events.eventuei
+   FROM
+     public.events
+   WHERE
+     public.events.eventuei LIKE '%bd%exceeded%' AND
+     eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
+JOIN
+  node
+ON
+  thresholdEvents.nodeid = public.node.nodeid
+GROUP BY
+  public.node.nodelabel
+ORDER BY
+  tph DESC
+LIMIT 20]]>
+		</queryString>
+		<field name="tph" class="java.lang.Double"/>
+		<field name="nodelabel" class="java.lang.String"/>
+	</subDataset>
+	<subDataset name="total-avg-tph-by-type">
+		<parameter name="DAYS" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("14")]]></defaultValueExpression>
+		</parameter>
+		<parameter name="TYPE" class="java.lang.String" isForPrompting="false"/>
+		<queryString>
+			<![CDATA[SELECT
+  count(eventuei)::FLOAT/24::FLOAT AS tph,
+  CASE
+    WHEN thresholdEvents.type = '{cpu}' THEN cast('CPU' AS TEXT)
+    WHEN thresholdEvents.type = '{connection}' THEN cast('Connection' AS TEXT)
+    WHEN thresholdEvents.type = '{disk}' THEN cast('Disk' AS TEXT)
+    WHEN thresholdEvents.type = '{memory}' THEN cast('Memory' AS TEXT)
+    WHEN thresholdEvents.type = '{bandwidth}' THEN cast('Bandwidth' AS TEXT)
+    WHEN thresholdEvents.type = '{uptime}' THEN cast('Uptime' AS TEXT)
+    WHEN thresholdEvents.type = '{process}' THEN cast('Process' AS TEXT)
+    ELSE cast('unknown' AS TEXT)
+  END as type,
+  CASE
+    WHEN thresholdEvents.severity = '{warning}' THEN cast('Warning' AS TEXT)
+    WHEN thresholdEvents.severity = '{minor}' THEN cast('Minor' AS TEXT)
+    WHEN thresholdEvents.severity = '{major}' THEN cast('Major' AS TEXT)
+    ELSE cast('unknown' AS TEXT)
+  END as severity,
+  thresholdEvents.time
+FROM
+  (SELECT
+     public.events.eventuei,
+     regexp_matches(public.events.eventuei, '.*(cpu|connection|disk|memory|bandwidth|uptime|process).*')::TEXT AS type,
+     regexp_matches(public.events.eventuei, '.*(warning|minor|major).*')::TEXT AS severity,
+     to_date(to_char(public.events.eventtime, 'DD-MM-YYYY'), 'DD-MM-YYYY'::TEXT)  AS time
+   FROM
+     public.events
+   WHERE
+     public.events.eventuei LIKE '%bd%exceeded%' AND
+     eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
+GROUP BY
+  thresholdEvents.time,
+  thresholdEvents.type,
+  thresholdEvents.severity
+ORDER BY
+  time ASC,
+  thresholdEvents.type,
+  thresholdEvents.severity DESC]]>
+		</queryString>
+		<field name="tph" class="java.lang.Double"/>
+		<field name="type" class="java.lang.String"/>
+		<field name="severity" class="java.lang.String"/>
+		<field name="time" class="java.sql.Date"/>
+		<group name="time">
+			<groupExpression><![CDATA[$F{time}]]></groupExpression>
+		</group>
+	</subDataset>
+	<subDataset name="avg-tph-by-type-node">
+		<parameter name="DAYS" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("14")]]></defaultValueExpression>
+		</parameter>
+		<parameter name="TYPE" class="java.lang.String" isForPrompting="false">
+			<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
+		</parameter>
+		<queryString>
+			<![CDATA[SELECT
+  count(eventuei)::FLOAT/24::FLOAT*$P{DAYS}::FLOAT AS tph,
+  CASE
+  WHEN thresholdEvents.type = '{cpu}' THEN cast('CPU' AS TEXT)
+  WHEN thresholdEvents.type = '{connection}' THEN cast('Connection' AS TEXT)
+  WHEN thresholdEvents.type = '{disk}' THEN cast('Disk' AS TEXT)
+  WHEN thresholdEvents.type = '{memory}' THEN cast('Memory' AS TEXT)
+  WHEN thresholdEvents.type = '{bandwidth}' THEN cast('Bandwidth' AS TEXT)
+  WHEN thresholdEvents.type = '{uptime}' THEN cast('Uptime' AS TEXT)
+  WHEN thresholdEvents.type = '{process}' THEN cast('Process' AS TEXT)
+  ELSE cast('unknown' AS TEXT)
+  END as type,
+  thresholdEvents.severity,
+  public.node.nodelabel
+FROM
+    (SELECT
+       public.events.nodeid,
+       public.events.eventuei,
+       regexp_matches(public.events.eventuei, '.*(cpu|connection|disk|memory|bandwidth|uptime|process).*')::TEXT AS type,
+       regexp_matches(public.events.eventuei, '.*(warning|minor|major).*')::TEXT AS severity
+     FROM
+       public.events
+     WHERE
+       public.events.eventuei LIKE '%bd%exceeded%' AND
+       eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
+    JOIN
+    public.node
+      ON
+        thresholdEvents.nodeid = public.node.nodeid
+WHERE
+  lower(type) like lower('%$P!{TYPE}%')
+GROUP BY
+  thresholdEvents.type,
+  public.node.nodelabel,
+  thresholdEvents.severity
+ORDER BY
+  tph DESC,
+  thresholdEvents.type,
+  thresholdEvents.severity
+LIMIT
+  20]]>
+		</queryString>
+		<field name="tph" class="java.lang.Double"/>
+		<field name="type" class="java.lang.String"/>
+		<field name="severity" class="java.lang.String"/>
+		<field name="nodelabel" class="java.lang.String"/>
+	</subDataset>
+	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["/opt/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="DAYS" class="java.lang.Integer">
+		<parameterDescription><![CDATA[Days back from now]]></parameterDescription>
+		<defaultValueExpression><![CDATA[Integer.valueOf("14")]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+  CASE
+    WHEN thresholdExceeded.type = '{cpu}' THEN cast('CPU' AS TEXT)
+    WHEN thresholdExceeded.type = '{connection}' THEN cast('Connection' AS TEXT)
+    WHEN thresholdExceeded.type = '{disk}' THEN cast('Disk' AS TEXT)
+    WHEN thresholdExceeded.type = '{memory}' THEN cast('Memory' AS TEXT)
+    WHEN thresholdExceeded.type = '{bandwidth}' THEN cast('Bandwidth' AS TEXT)
+    WHEN thresholdExceeded.type = '{uptime}' THEN cast('Uptime' AS TEXT)
+    WHEN thresholdExceeded.type = '{process}' THEN cast('Process' AS TEXT)
+    ELSE cast('unknown' AS TEXT)
+  END as type
+FROM
+  (SELECT
+     DISTINCT (regexp_matches(public.events.eventuei, '.*(cpu|connection|disk|memory|bandwidth|uptime|process).*')::TEXT) AS type
+   FROM
+     public.events
+   WHERE
+     public.events.eventuei LIKE '%bd%exceeded%' AND
+     eventtime >= now() - INTERVAL '14 Days') AS thresholdExceeded
+ORDER BY
+  type ASC]]>
+	</queryString>
+	<field name="type" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="588" splitType="Stretch">
+			<rectangle radius="5">
+				<reportElement mode="Opaque" x="0" y="55" width="555" height="20" backcolor="#009700"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<stackedAreaChart>
+				<chart>
+					<reportElement x="0" y="85" width="555" height="230"/>
+					<chartTitle position="Top">
+						<font size="10" isBold="true"/>
+						<titleExpression><![CDATA["Total threshold per hour"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle>
+						<font size="8"/>
+						<subtitleExpression><![CDATA["Average by day"]]></subtitleExpression>
+					</chartSubtitle>
+					<chartLegend>
+						<font size="8"/>
+					</chartLegend>
+				</chart>
+				<categoryDataset>
+					<dataset>
+						<datasetRun subDataset="total-avg-tph">
+							<datasetParameter name="DAYS">
+								<datasetParameterExpression><![CDATA[$P{DAYS}]]></datasetParameterExpression>
+							</datasetParameter>
+							<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+						</datasetRun>
+					</dataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{type}]]></seriesExpression>
+						<categoryExpression><![CDATA[$F{time}]]></categoryExpression>
+						<valueExpression><![CDATA[$F{tph}]]></valueExpression>
+						<labelExpression><![CDATA["Notifications per hour"]]></labelExpression>
+					</categorySeries>
+				</categoryDataset>
+				<areaPlot>
+					<plot foregroundAlpha="1.0" labelRotation="45.0">
+						<seriesColor seriesOrder="0" color="#555753"/>
+						<seriesColor seriesOrder="1" color="#3465A4"/>
+						<seriesColor seriesOrder="2" color="#73D216"/>
+						<seriesColor seriesOrder="3" color="#C17D11"/>
+						<seriesColor seriesOrder="4" color="#75507B"/>
+						<seriesColor seriesOrder="5" color="#CC0000"/>
+					</plot>
+					<categoryAxisLabelExpression><![CDATA["Date"]]></categoryAxisLabelExpression>
+					<categoryAxisFormat labelRotation="45.0">
+						<axisFormat verticalTickLabels="false">
+							<labelFont/>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisLabelExpression><![CDATA["average tph"]]></valueAxisLabelExpression>
+					<valueAxisFormat>
+						<axisFormat verticalTickLabels="false">
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</valueAxisFormat>
+				</areaPlot>
+			</stackedAreaChart>
+			<textField>
+				<reportElement style="Section" x="5" y="55" width="545" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Overall threshold per hour (tph)"]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="391" y="0" width="164" height="49"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement style="Title" x="0" y="0" width="391" height="34"/>
+				<textElement/>
+				<text><![CDATA[Thresholds & Notifications]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="35" y="34" width="356" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[new SimpleDateFormat().format(GregorianCalendar.getInstance().getTime())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Sub-sub-sub-header" x="0" y="34" width="35" height="15"/>
+				<textElement/>
+				<text><![CDATA[Date: ]]></text>
+			</staticText>
+			<rectangle radius="5">
+				<reportElement mode="Opaque" x="0" y="328" width="554" height="20" backcolor="#009700"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement style="Section" x="5" y="328" width="545" height="20"/>
+				<textElement/>
+				<text><![CDATA[Top 20 average thresholds per hour (tph) by node]]></text>
+			</staticText>
+			<lineChart>
+				<chart isShowLegend="false">
+					<reportElement positionType="Float" x="0" y="357" width="555" height="230"/>
+					<chartTitle>
+						<font size="10" isBold="true"/>
+						<titleExpression><![CDATA["Top 20 nodes"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle>
+						<font size="8"/>
+						<subtitleExpression><![CDATA["Total threshold events per hour"]]></subtitleExpression>
+					</chartSubtitle>
+					<chartLegend>
+						<font size="8"/>
+					</chartLegend>
+				</chart>
+				<categoryDataset>
+					<dataset>
+						<datasetRun subDataset="top20-nodes-tph"/>
+					</dataset>
+					<categorySeries>
+						<seriesExpression><![CDATA["Nodelabel"]]></seriesExpression>
+						<categoryExpression><![CDATA[$F{nodelabel}]]></categoryExpression>
+						<valueExpression><![CDATA[$F{tph}]]></valueExpression>
+						<itemHyperlink>
+							<hyperlinkTooltipExpression><![CDATA[$F{tph}.toString()]]></hyperlinkTooltipExpression>
+						</itemHyperlink>
+					</categorySeries>
+				</categoryDataset>
+				<linePlot isShowLines="true" isShowShapes="true">
+					<plot labelRotation="45.0">
+						<seriesColor seriesOrder="0" color="#555753"/>
+						<seriesColor seriesOrder="1" color="#3465A4"/>
+						<seriesColor seriesOrder="2" color="#73D216"/>
+						<seriesColor seriesOrder="3" color="#C17D11"/>
+						<seriesColor seriesOrder="4" color="#75507B"/>
+						<seriesColor seriesOrder="5" color="#CC0000"/>
+					</plot>
+					<categoryAxisLabelExpression><![CDATA["Node Label"]]></categoryAxisLabelExpression>
+					<categoryAxisFormat labelRotation="45.0">
+						<axisFormat verticalTickLabels="true">
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisLabelExpression><![CDATA["average tph"]]></valueAxisLabelExpression>
+					<valueAxisFormat>
+						<axisFormat verticalTickLabels="false">
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</valueAxisFormat>
+				</linePlot>
+			</lineChart>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="60" splitType="Stretch">
+			<image>
+				<reportElement x="391" y="0" width="164" height="49"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement style="Sub-sub-sub-header" x="0" y="34" width="35" height="15"/>
+				<textElement/>
+				<text><![CDATA[Date: ]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="35" y="34" width="356" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[new SimpleDateFormat().format(GregorianCalendar.getInstance().getTime())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Title" x="0" y="0" width="391" height="34"/>
+				<textElement/>
+				<text><![CDATA[Thresholds & Notifications]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="54" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="669" splitType="Stretch">
+			<stackedAreaChart>
+				<chart>
+					<reportElement x="0" y="30" width="555" height="230"/>
+					<chartTitle>
+						<font size="10" isBold="true"/>
+						<titleExpression><![CDATA["Threshold per hour"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle>
+						<font size="8"/>
+						<subtitleExpression><![CDATA["Average by day"]]></subtitleExpression>
+					</chartSubtitle>
+					<chartLegend>
+						<font size="8"/>
+					</chartLegend>
+				</chart>
+				<categoryDataset>
+					<dataset>
+						<incrementWhenExpression><![CDATA[$F{type}.equals($P{TYPE})]]></incrementWhenExpression>
+						<datasetRun subDataset="total-avg-tph-by-type">
+							<datasetParameter name="TYPE">
+								<datasetParameterExpression><![CDATA[$F{type}]]></datasetParameterExpression>
+							</datasetParameter>
+							<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+						</datasetRun>
+					</dataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{severity}]]></seriesExpression>
+						<categoryExpression><![CDATA[$F{time}]]></categoryExpression>
+						<valueExpression><![CDATA[$F{tph}]]></valueExpression>
+						<labelExpression><![CDATA[$F{severity}]]></labelExpression>
+						<itemHyperlink>
+							<hyperlinkTooltipExpression><![CDATA[$F{tph}.toString()]]></hyperlinkTooltipExpression>
+						</itemHyperlink>
+					</categorySeries>
+				</categoryDataset>
+				<areaPlot>
+					<plot labelRotation="45.0">
+						<seriesColor seriesOrder="0" color="#EDD400"/>
+						<seriesColor seriesOrder="1" color="#F57900"/>
+						<seriesColor seriesOrder="2" color="#CC0000"/>
+					</plot>
+					<categoryAxisLabelExpression><![CDATA["Date"]]></categoryAxisLabelExpression>
+					<categoryAxisFormat labelRotation="45.0">
+						<axisFormat tickLabelMask="">
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisLabelExpression><![CDATA["average tph"]]></valueAxisLabelExpression>
+					<valueAxisFormat>
+						<axisFormat>
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</valueAxisFormat>
+				</areaPlot>
+			</stackedAreaChart>
+			<rectangle radius="5">
+				<reportElement mode="Opaque" x="0" y="0" width="555" height="20" backcolor="#009700"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<textField>
+				<reportElement style="Section" x="5" y="0" width="545" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Threshold per hour (tph): " + $F{type}]]></textFieldExpression>
+			</textField>
+			<stackedBarChart>
+				<chart>
+					<reportElement x="0" y="265" width="555" height="230"/>
+					<chartTitle>
+						<font size="10" isBold="true" isItalic="false"/>
+						<titleExpression><![CDATA["Top 20 nodes"]]></titleExpression>
+					</chartTitle>
+					<chartSubtitle>
+						<font size="8"/>
+						<subtitleExpression><![CDATA["Thresholds by " + $F{type}]]></subtitleExpression>
+					</chartSubtitle>
+					<chartLegend>
+						<font size="8"/>
+					</chartLegend>
+				</chart>
+				<categoryDataset>
+					<dataset>
+						<datasetRun subDataset="avg-tph-by-type-node">
+							<datasetParameter name="DAYS">
+								<datasetParameterExpression><![CDATA[$P{DAYS}]]></datasetParameterExpression>
+							</datasetParameter>
+							<datasetParameter name="TYPE">
+								<datasetParameterExpression><![CDATA[$F{type}]]></datasetParameterExpression>
+							</datasetParameter>
+						</datasetRun>
+					</dataset>
+					<categorySeries>
+						<seriesExpression><![CDATA[$F{severity}]]></seriesExpression>
+						<categoryExpression><![CDATA[$F{nodelabel}]]></categoryExpression>
+						<valueExpression><![CDATA[$F{tph}]]></valueExpression>
+					</categorySeries>
+				</categoryDataset>
+				<barPlot>
+					<plot labelRotation="45.0">
+						<seriesColor seriesOrder="0" color="#EDD400"/>
+						<seriesColor seriesOrder="1" color="#F57900"/>
+						<seriesColor seriesOrder="2" color="#CC0000"/>
+					</plot>
+					<itemLabel color="#000000" backgroundColor="#FFFFFF">
+						<font size="8"/>
+					</itemLabel>
+					<categoryAxisLabelExpression><![CDATA["Node Label"]]></categoryAxisLabelExpression>
+					<categoryAxisFormat labelRotation="45.0">
+						<axisFormat>
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</categoryAxisFormat>
+					<valueAxisLabelExpression><![CDATA["average tph"]]></valueAxisLabelExpression>
+					<valueAxisFormat>
+						<axisFormat>
+							<labelFont>
+								<font size="8"/>
+							</labelFont>
+							<tickLabelFont>
+								<font size="8"/>
+							</tickLabelFont>
+						</axisFormat>
+					</valueAxisFormat>
+				</barPlot>
+			</stackedBarChart>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="16" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="0" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="446" y="1" width="80" height="14"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="526" y="1" width="24" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
