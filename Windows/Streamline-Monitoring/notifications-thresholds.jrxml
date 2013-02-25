@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="notification-thresholds" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isTitleNewPage="true">
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="33"/>
+	<property name="ireport.y" value="689"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -335,7 +335,6 @@ ORDER BY
 						<seriesColor seriesOrder="4" color="#75507B"/>
 						<seriesColor seriesOrder="5" color="#CC0000"/>
 					</plot>
-					<categoryAxisLabelExpression><![CDATA["Date"]]></categoryAxisLabelExpression>
 					<categoryAxisFormat labelRotation="45.0">
 						<axisFormat verticalTickLabels="false">
 							<labelFont/>
@@ -429,7 +428,6 @@ ORDER BY
 						<seriesColor seriesOrder="4" color="#75507B"/>
 						<seriesColor seriesOrder="5" color="#CC0000"/>
 					</plot>
-					<categoryAxisLabelExpression><![CDATA["Node Label"]]></categoryAxisLabelExpression>
 					<categoryAxisFormat labelRotation="45.0">
 						<axisFormat verticalTickLabels="true">
 							<labelFont>
@@ -530,7 +528,6 @@ ORDER BY
 						<seriesColor seriesOrder="1" color="#F57900"/>
 						<seriesColor seriesOrder="2" color="#CC0000"/>
 					</plot>
-					<categoryAxisLabelExpression><![CDATA["Date"]]></categoryAxisLabelExpression>
 					<categoryAxisFormat labelRotation="45.0">
 						<axisFormat tickLabelMask="">
 							<labelFont>
@@ -606,7 +603,6 @@ ORDER BY
 					<itemLabel color="#000000" backgroundColor="#FFFFFF">
 						<font size="8"/>
 					</itemLabel>
-					<categoryAxisLabelExpression><![CDATA["Node Label"]]></categoryAxisLabelExpression>
 					<categoryAxisFormat labelRotation="45.0">
 						<axisFormat>
 							<labelFont>
