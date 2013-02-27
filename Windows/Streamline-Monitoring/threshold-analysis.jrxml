@@ -413,7 +413,11 @@ ORDER BY
 				</chart>
 				<categoryDataset>
 					<dataset>
-						<datasetRun subDataset="top20-nodes-tph"/>
+						<datasetRun subDataset="top20-nodes-tph">
+							<datasetParameter name="DAYS">
+								<datasetParameterExpression><![CDATA[$P{DAYS}]]></datasetParameterExpression>
+							</datasetParameter>
+						</datasetRun>
 					</dataset>
 					<categorySeries>
 						<seriesExpression><![CDATA["Nodelabel"]]></seriesExpression>
@@ -513,6 +517,9 @@ ORDER BY
 						<datasetRun subDataset="total-avg-tph-by-type">
 							<datasetParameter name="TYPE">
 								<datasetParameterExpression><![CDATA[$F{type}]]></datasetParameterExpression>
+							</datasetParameter>
+							<datasetParameter name="DAYS">
+								<datasetParameterExpression><![CDATA[$P{DAYS}]]></datasetParameterExpression>
 							</datasetParameter>
 							<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
 						</datasetRun>
