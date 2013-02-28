@@ -3,7 +3,7 @@
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
-	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<template><![CDATA["/usr/share/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="Threshold-Style" backcolor="#FFFFFF" vAlign="Middle">
 		<conditionalStyle>
 			<conditionExpression><![CDATA[$V{USED_PERCENT} >= $P{CRITICAL}]]></conditionExpression>
@@ -33,7 +33,7 @@
 		<defaultValueExpression><![CDATA["C"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="driveLetterAscii" class="java.lang.Integer" isForPrompting="false"/>
-	<queryString language="jrobin">
+	<queryString language="rrdtool">
 		<![CDATA[--start $P{startDate} --end $P{endDate}
   DEF:free=$P{rrdDir}/snmp/$P{nodeid}/sinfLDskInstance/2.$P{driveLetterAscii}.58/sinfLDskPctFreeSpc.jrb:sinfLDskPctFreeSpc:AVERAGE
   DEF:mbytes=$P{rrdDir}/snmp/$P{nodeid}/sinfLDskInstance/2.$P{driveLetterAscii}.58/sinfLDskFreeMbytes.jrb:sinfLDskFreeMbytes:AVERAGE

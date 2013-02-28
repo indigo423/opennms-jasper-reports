@@ -99,7 +99,7 @@ FROM
    FROM
      public.events
    WHERE
-     public.events.eventuei LIKE '%bd%exceeded%' AND
+     public.events.eventuei LIKE '%exceeded%' AND
      eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
 GROUP BY
   thresholdEvents.time,
@@ -130,7 +130,7 @@ FROM
    FROM
      public.events
    WHERE
-     public.events.eventuei LIKE '%bd%exceeded%' AND
+     public.events.eventuei LIKE '%exceeded%' AND
      eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
 JOIN
   node
@@ -179,7 +179,7 @@ FROM
    FROM
      public.events
    WHERE
-     public.events.eventuei LIKE '%bd%exceeded%' AND
+     public.events.eventuei LIKE '%exceeded%' AND
      eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
 GROUP BY
   thresholdEvents.time,
@@ -234,14 +234,14 @@ FROM
      FROM
        public.events
      WHERE
-       public.events.eventuei LIKE '%bd%exceeded%' AND
+       public.events.eventuei LIKE '%exceeded%' AND
        eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
     JOIN
     public.node
       ON
         thresholdEvents.nodeid = public.node.nodeid
 WHERE
-  lower(type) like lower('%$P!{TYPE}%')
+  lower(type) LIKE lower('%$P!{TYPE}%')
 GROUP BY
   thresholdEvents.type,
   public.node.nodelabel,
@@ -283,7 +283,7 @@ FROM
    FROM
      public.events
    WHERE
-     public.events.eventuei LIKE '%bd%exceeded%' AND
+     public.events.eventuei LIKE '%exceeded%' AND
      eventtime >= now() - INTERVAL '14 Days') AS thresholdExceeded
 ORDER BY
   type ASC]]>
