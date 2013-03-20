@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="threshold-analysis" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" isTitleNewPage="true">
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.y" value="593"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -206,57 +206,104 @@ ORDER BY
 			<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
 		</parameter>
 		<queryString>
-			<![CDATA[SELECT
-  count(eventuei)::FLOAT/24::FLOAT*$P{DAYS}::FLOAT AS tph,
-  CASE
-  WHEN thresholdEvents.type = '{cpu}' THEN cast('CPU' AS TEXT)
-  WHEN thresholdEvents.type = '{connection}' THEN cast('Connection' AS TEXT)
-  WHEN thresholdEvents.type = '{disk}' THEN cast('Disk' AS TEXT)
-  WHEN thresholdEvents.type = '{memory}' THEN cast('Memory' AS TEXT)
-  WHEN thresholdEvents.type = '{bandwidth}' THEN cast('Bandwidth' AS TEXT)
-  WHEN thresholdEvents.type = '{uptime}' THEN cast('Uptime' AS TEXT)
-  WHEN thresholdEvents.type = '{process}' THEN cast('Process' AS TEXT)
-  ELSE cast('unknown' AS TEXT)
-  END as type,
-  CASE
-  WHEN thresholdEvents.severity = '{warning}' THEN cast('Warning' AS TEXT)
-  WHEN thresholdEvents.severity = '{minor}' THEN cast('Minor' AS TEXT)
-  WHEN thresholdEvents.severity = '{major}' THEN cast('Major' AS TEXT)
-  ELSE cast('unknown' AS TEXT)
-  END as severity,
-  public.node.nodelabel
+			<![CDATA[(SELECT
+  (SUM(node_thresholds.threshold_exceeded)/24::FLOAT*$P!{DAYS}::FLOAT) AS tph,
+  node_thresholds.threshold_type_name,
+  node_thresholds.severity_name,
+  node_thresholds.nodelabel,
+  node_thresholds.eventseverity
 FROM
+  (SELECT
+    CASE
+      WHEN threshold_type.threshold_type_name IS NOT NULL THEN CAST('1' AS FLOAT)
+      ELSE CAST('0' AS FLOAT)
+    END AS threshold_exceeded,
+    CASE
+      WHEN threshold_type.threshold_type_name IS NULL THEN cast('' AS TEXT)
+      ELSE threshold_type.threshold_type_name
+    END AS threshold_type_name,
+   CASE
+     WHEN threshold_severity.severity_name IS NULL THEN cast('' AS TEXT)
+     ELSE threshold_severity.severity_name
+   END AS severity_name,
+   CASE
+     WHEN public.node.nodelabel IS NULL THEN cast('' AS TEXT)
+     ELSE public.node.nodelabel
+   END AS nodelabel,
+   threshold_events.eventseverity
+  FROM
     (SELECT
-       public.events.nodeid,
-       public.events.eventuei,
-       regexp_matches(public.events.eventuei, '.*(cpu|connection|disk|memory|bandwidth|uptime|process).*')::TEXT AS type,
-       regexp_matches(public.events.eventuei, '.*(warning|minor|major).*')::TEXT AS severity
+      column1 AS severity_name,
+      column2 AS eventseverity
+    FROM
+      (VALUES ('Warning','4'::INTEGER), ('Minor','5'::INTEGER), ('Major','6'::INTEGER)) AS foo
+    ) AS threshold_severity
+  LEFT JOIN
+    (SELECT
+      public.events.nodeid,
+      public.events.eventuei,
+      regexp_matches(public.events.eventuei, '.*(cpu|connection|disk|memory|bandwidth|uptime|process).*')::TEXT AS threshold_type_id,
+      public.events.eventseverity
+    FROM
+      public.events
+    WHERE
+      public.events.eventuei LIKE '%exceeded%' AND
+      public.events.eventuei LIKE lower('%$P!{TYPE}%') AND
+      eventtime >= now() - INTERVAL '$P!{DAYS} days'
+    ) AS threshold_events
+  ON
+      threshold_events.eventseverity = threshold_severity.eventseverity
+  LEFT JOIN
+    (SELECT
+       column1 AS threshold_type_name,
+       column2 AS threshold_type_id
      FROM
-       public.events
-     WHERE
-       public.events.eventuei LIKE '%exceeded%' AND
-       eventtime >= now() - INTERVAL '$P!{DAYS} days') AS thresholdEvents
-    JOIN
+       (VALUES ('CPU','{cpu}'),
+        ('Connection','{connection}'),
+        ('Disk','{disk}'),
+        ('Memory','{memory}'),
+        ('Bandwidth','{bandwidth}'),
+        ('Uptime','{uptime}'),
+        ('Process','{process}')
+       ) AS foo
+    ) AS threshold_type
+  ON
+    threshold_events.threshold_type_id = threshold_type.threshold_type_id
+  LEFT JOIN
     public.node
-      ON
-        thresholdEvents.nodeid = public.node.nodeid
-WHERE
-  lower(type) LIKE lower('%$P!{TYPE}%')
+  ON
+    threshold_events.nodeid = public.node.nodeid
+  ) AS node_thresholds
 GROUP BY
-  thresholdEvents.type,
-  public.node.nodelabel,
-  thresholdEvents.severity
+  node_thresholds.threshold_type_name,
+  node_thresholds.severity_name,
+  node_thresholds.eventseverity,
+  node_thresholds.nodelabel
+LIMIT
+  20)
+UNION
+  SELECT
+    column1 AS tph,
+    column2 AS threshold_type_name,
+    column3 AS severity_name,
+    column4 AS nodelabel,
+    column5 AS eventseverity
+  FROM
+    (VALUES
+      ('0'::INTEGER, ''::TEXT,'Warning'::TEXT,''::TEXT, '4'::INTEGER),
+      ('0'::INTEGER, ''::TEXT,'Minor'::TEXT,''::TEXT, '5'::INTEGER),
+      ('0'::INTEGER, ''::TEXT,'Major'::TEXT,''::TEXT, '6'::INTEGER)
+    ) AS foo
 ORDER BY
   tph DESC,
-  thresholdEvents.type,
-  thresholdEvents.severity
-LIMIT
-  20]]>
+  eventseverity,
+  threshold_type_name]]>
 		</queryString>
 		<field name="tph" class="java.lang.Double"/>
-		<field name="type" class="java.lang.String"/>
-		<field name="severity" class="java.lang.String"/>
+		<field name="threshold_type_name" class="java.lang.String"/>
+		<field name="severity_name" class="java.lang.String"/>
 		<field name="nodelabel" class="java.lang.String"/>
+		<field name="eventseverity" class="java.lang.Integer"/>
 	</subDataset>
 	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
 		<defaultValueExpression><![CDATA["/opt/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
@@ -601,7 +648,7 @@ ORDER BY
 						</datasetRun>
 					</dataset>
 					<categorySeries>
-						<seriesExpression><![CDATA[$F{severity}]]></seriesExpression>
+						<seriesExpression><![CDATA[$F{severity_name}]]></seriesExpression>
 						<categoryExpression><![CDATA[$F{nodelabel}]]></categoryExpression>
 						<valueExpression><![CDATA[$F{tph}]]></valueExpression>
 					</categorySeries>

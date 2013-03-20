@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ocs-machine-report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="176"/>
+	<property name="ireport.y" value="112"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -338,7 +338,7 @@ WHERE
 			</componentElement>
 			<image onErrorType="Blank">
 				<reportElement x="291" y="24" width="247" height="115"/>
-				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{id} + "%5d.sinfCpuInstance%5b6.95.84.111.116.97.108%5d&report=sinf.cpupercent&start=" + Long.toString(GregorianCalendar.getInstance().getTimeInMillis() - 1209600000L) + "&end=" + Long.toString(GregorianCalendar.getInstance().getTimeInMillis())]]></imageExpression>
+				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{id} + "%5d.sinfCpuInstance%5b6.95.84.111.116.97.108%5d&report=sinf.cpupercent&start=" + Long.toString(GregorianCalendar.getInstance().getTimeInMillis() - 72576000000L) + "&end=" + Long.toString(GregorianCalendar.getInstance().getTimeInMillis())]]></imageExpression>
 			</image>
 			<image onErrorType="Blank">
 				<reportElement x="8" y="151" width="247" height="115"/>
