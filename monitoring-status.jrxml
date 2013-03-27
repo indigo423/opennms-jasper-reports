@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="monitoring-status" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="67"/>
+	<property name="ireport.y" value="20"/>
+	<template><![CDATA["/usr/share/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<style name="table">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1">
+		<box>
+			<pen lineWidth="1.0" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1_TH" mode="Opaque" backcolor="#F0F8FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1_CH" mode="Opaque" backcolor="#BFE1FF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<style name="table 1_TD" mode="Opaque" backcolor="#FFFFFF">
+		<box>
+			<topPen lineWidth="0.5" lineColor="#000000"/>
+			<bottomPen lineWidth="0.5" lineColor="#000000"/>
+		</box>
+	</style>
+	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["/usr/share/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NODE_LABEL" class="java.lang.String">
+		<parameterDescription><![CDATA[Node label]]></parameterDescription>
+		<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+  public.node.nodeid,
+  public.node.nodelabel,
+  public.ifservices.ipaddr,
+  public.service.servicename,
+  CASE
+    WHEN public.ifservices.status = 'F' THEN
+      CAST('Force unmanaged' AS TEXT)
+    WHEN public.ifservices.status = 'N' THEN
+      CAST('Not monitored' AS TEXT)
+    ELSE
+      CAST('Unknown status' AS TEXT)
+  END AS status
+FROM
+  public.node
+JOIN
+  public.ifservices
+ON
+  public.node.nodeid = public.ifservices.nodeid
+JOIN
+  public.service
+ON
+  public.ifservices.serviceid = public.service.serviceid
+WHERE
+  public.node.nodetype = 'A' AND
+  (public.ifservices.status = 'F' OR
+  public.ifservices.status = 'N')
+ORDER BY
+  public.node.nodelabel,
+  public.ifservices.ipaddr,
+  public.service.servicename]]>
+	</queryString>
+	<field name="nodeid" class="java.lang.Integer"/>
+	<field name="nodelabel" class="java.lang.String"/>
+	<field name="ipaddr" class="java.lang.String"/>
+	<field name="servicename" class="java.lang.String"/>
+	<field name="status" class="java.lang.String"/>
+	<group name="Node" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[$F{nodeid}]]></groupExpression>
+		<groupHeader>
+			<band height="21">
+				<textField>
+					<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
+					<textElement/>
+					<textFieldExpression class="java.lang.String"><![CDATA["Nodelabel: " + $F{nodelabel}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band/>
+		</groupFooter>
+	</group>
+	<group name="IP-Interface">
+		<groupExpression><![CDATA[$F{nodeid}]]></groupExpression>
+		<groupHeader>
+			<band height="20">
+				<staticText>
+					<reportElement style="Body" x="145" y="0" width="190" height="18"/>
+					<textElement>
+						<font isBold="true" isItalic="true"/>
+					</textElement>
+					<text><![CDATA[Service name]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Body" x="335" y="0" width="220" height="18"/>
+					<textElement>
+						<font isBold="true" isItalic="true"/>
+					</textElement>
+					<text><![CDATA[Monitoring status]]></text>
+				</staticText>
+				<staticText>
+					<reportElement style="Body" x="5" y="0" width="140" height="18"/>
+					<textElement>
+						<font isBold="true" isItalic="true"/>
+					</textElement>
+					<text><![CDATA[IP Address]]></text>
+				</staticText>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="154" splitType="Stretch">
+			<staticText>
+				<reportElement style="Body" x="0" y="22" width="555" height="15"/>
+				<textElement/>
+				<text><![CDATA[This report shows the current status of manually forced unmanaged services or services which are not monitored.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Body" x="0" y="37" width="114" height="14"/>
+				<textElement>
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Force unmanaged:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Body" x="0" y="90" width="114" height="14"/>
+				<textElement>
+					<font isBold="true" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Not Monitored:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Body" x="114" y="37" width="441" height="46"/>
+				<textElement verticalAlignment="Top">
+					<font isBold="false" isItalic="false"/>
+				</textElement>
+				<text><![CDATA[This service has been manually turned off. It has to be clarified if the service should be permanently removed from monitoring. Monitoring will not be continued automatically, it has to be turned on manually.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Body" x="114" y="90" width="441" height="52"/>
+				<textElement verticalAlignment="Top"/>
+				<text><![CDATA[This monitor is automatically detected or manually assigned to an interface. The OpenNMS poller for testing the service availability has no configuration to test this service. Please check if its necessary to assign this service to an interface.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Body" x="0" y="2" width="555" height="20"/>
+				<textElement>
+					<font isBold="true" isItalic="false"/>
+				</textElement>
+				<text><![CDATA[Explanation:]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="86" splitType="Stretch">
+			<image>
+				<reportElement x="391" y="0" width="164" height="49"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement style="Sub-sub-sub-header" x="0" y="34" width="35" height="15"/>
+				<textElement/>
+				<text><![CDATA[Date: ]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="35" y="34" width="356" height="15" isPrintWhenDetailOverflows="true"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[new SimpleDateFormat().format(GregorianCalendar.getInstance().getTime())]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Title" x="0" y="0" width="391" height="34"/>
+				<textElement/>
+				<text><![CDATA[Monitoring Status Report]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="54" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<rectangle radius="5">
+				<reportElement mode="Opaque" x="0" y="65" width="555" height="20" backcolor="#009700"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement style="Section" x="5" y="65" width="545" height="20"/>
+				<textElement/>
+				<text><![CDATA[Force unmanaged or not monitored services]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="21" splitType="Stretch">
+			<textField>
+				<reportElement style="Body" x="145" y="0" width="190" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{servicename}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Body" x="335" y="0" width="220" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{status}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Body" x="5" y="0" width="140" height="18"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{ipaddr}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="16" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="0" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="446" y="1" width="80" height="14"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="526" y="1" width="24" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

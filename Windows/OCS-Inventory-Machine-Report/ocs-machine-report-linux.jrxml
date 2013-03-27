@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ocs-machine-report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ocs-machine-report-linux" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
+	<property name="ireport.y" value="352"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -62,26 +62,31 @@
   drives.FILESYSTEM AS filesystem,
   drives.FREE AS free,
   drives.total,
-  drives.TYPE AS type
+  drives.TYPE AS type,
+  CASE drives.TYPE WHEN "/" THEN "_root_fs"
+    ELSE SUBSTR(replace(drives.TYPE, '/','-'),2)
+  END AS opennms_type
 FROM
   drives
 WHERE
   drives.HARDWARE_ID = $P{HARDWARE_ID}
 ORDER BY
-  drives.letter]]>
+  drives.TYPE]]>
 		</queryString>
 		<field name="letter" class="java.lang.String"/>
 		<field name="filesystem" class="java.lang.String"/>
 		<field name="free" class="java.lang.Integer"/>
 		<field name="total" class="java.lang.Integer"/>
 		<field name="type" class="java.lang.String"/>
+		<field name="opennms_type" class="java.lang.String"/>
+		<filterExpression><![CDATA["xfs".equals($F{filesystem}) || "ext4".equals($F{filesystem}) || "ext3".equals($F{filesystem})]]></filterExpression>
 	</subDataset>
 	<subDataset name="ocs-network">
 		<parameter name="HARDWARE_ID" class="java.lang.Integer" isForPrompting="false"/>
 		<parameter name="id" class="java.lang.Integer" isForPrompting="false"/>
 		<parameter name="OPENNMS_URL_BASE" class="java.lang.String" isForPrompting="false"/>
-		<parameter name="DS_START_DATE" class="java.util.Date" isForPrompting="false"/>
 		<parameter name="DS_END_DATE" class="java.util.Date" isForPrompting="false"/>
+		<parameter name="DS_START_DATE" class="java.util.Date" isForPrompting="false"/>
 		<queryString>
 			<![CDATA[SELECT
   networks.IPADDRESS AS ipaddress,
@@ -90,11 +95,13 @@ ORDER BY
   networks.MACADDR AS macaddr,
   networks.IPSUBNET AS ipsubnet,
   networks.description,
-  networks.IPDHCP AS ipdhcp
+  networks.IPDHCP AS ipdhcp,
+  replace(networks.MACADDR, ':','') AS opennms_network
 FROM
   networks
 WHERE
-  networks.HARDWARE_ID = $P{HARDWARE_ID}
+  networks.HARDWARE_ID = $P{HARDWARE_ID} AND
+  networks.description != 'lo'
 ORDER BY
   networks.DESCRIPTION]]>
 		</queryString>
@@ -105,6 +112,7 @@ ORDER BY
 		<field name="ipsubnet" class="java.lang.String"/>
 		<field name="description" class="java.lang.String"/>
 		<field name="ipdhcp" class="java.lang.String"/>
+		<field name="opennms_network" class="java.lang.String"/>
 	</subDataset>
 	<subDataset name="ocs-software">
 		<parameter name="HARDWARE_ID" class="java.lang.Integer" isForPrompting="false"/>
@@ -160,8 +168,18 @@ ORDER BY
 		<field name="memory" class="java.lang.Integer"/>
 		<field name="swap" class="java.lang.Integer"/>
 	</subDataset>
+	<parameter name="startDate" class="java.util.Date" isForPrompting="false">
+		<defaultValueExpression><![CDATA[new java.util.Date(
+new GregorianCalendar(new GregorianCalendar().get(Calendar.YEAR), new GregorianCalendar().get(Calendar.MONTH), new GregorianCalendar().get(Calendar.DATE) - 7).getTimeInMillis()
+)]]></defaultValueExpression>
+	</parameter>
 	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
 		<defaultValueExpression><![CDATA["/opt/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="endDate" class="java.util.Date" isForPrompting="false">
+		<defaultValueExpression><![CDATA[new java.util.Date(
+new GregorianCalendar(new GregorianCalendar().get(Calendar.YEAR), new GregorianCalendar().get(Calendar.MONTH), new GregorianCalendar().get(Calendar.DATE)).getTimeInMillis()
+)]]></defaultValueExpression>
 	</parameter>
 	<parameter name="OCS_DB_IP" class="java.lang.String">
 		<defaultValueExpression><![CDATA["ocs-db-server"]]></defaultValueExpression>
@@ -178,7 +196,7 @@ ORDER BY
 	<parameter name="OCS_REQUISITION_NAME" class="java.lang.String"/>
 	<parameter name="OPENNMS_URL_BASE" class="java.lang.String"/>
 	<parameter name="NODE_LABEL" class="java.lang.String">
-		<defaultValueExpression><![CDATA[]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="START_DATE" class="java.util.Date">
 		<parameterDescription><![CDATA[Start date]]></parameterDescription>
@@ -198,7 +216,7 @@ FROM
 WHERE
     nodelabel like '$P!{NODE_LABEL}' AND
     nodetype = 'A' AND
-    nodesysoid like '.1.3.6.1.4.1.311.%' AND
+    nodesysoid like '.1.3.6.1.4.1.8072.%' AND
     foreignsource like '$P!{OCS_REQUISITION_NAME}']]>
 	</queryString>
 	<field name="id" class="java.lang.Integer"/>
@@ -243,7 +261,7 @@ WHERE
 		<band splitType="Stretch"/>
 	</columnHeader>
 	<detail>
-		<band height="267" splitType="Stretch">
+		<band height="294" splitType="Stretch">
 			<rectangle radius="5">
 				<reportElement mode="Opaque" x="0" y="0" width="555" height="20" backcolor="#009700"/>
 				<graphicElement>
@@ -295,11 +313,6 @@ WHERE
 							<textElement/>
 							<text><![CDATA[SWAP:]]></text>
 						</staticText>
-						<staticText>
-							<reportElement style="Body" x="0" y="48" width="95" height="15"/>
-							<textElement/>
-							<text><![CDATA[Domain:]]></text>
-						</staticText>
 						<textField pattern="">
 							<reportElement style="Body" x="96" y="3" width="160" height="15"/>
 							<textElement/>
@@ -314,11 +327,6 @@ WHERE
 							<reportElement style="Body" x="95" y="33" width="161" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{oscomments}]]></textFieldExpression>
-						</textField>
-						<textField pattern="" isBlankWhenNull="true">
-							<reportElement style="Body" x="95" y="48" width="161" height="15"/>
-							<textElement/>
-							<textFieldExpression class="java.lang.String"><![CDATA[$F{userdomain}]]></textFieldExpression>
 						</textField>
 						<textField pattern="">
 							<reportElement style="Body" x="30" y="69" width="226" height="30"/>
@@ -339,16 +347,16 @@ WHERE
 				</jr:list>
 			</componentElement>
 			<image onErrorType="Blank">
-				<reportElement x="291" y="24" width="247" height="115"/>
-				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{id} + "%5d.sinfCpuInstance%5b6.95.84.111.116.97.108%5d&report=sinf.cpupercent&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
+				<reportElement x="280" y="23" width="275" height="115"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{id} + "%5d.nodeSnmp%5b%5d&report=netsnmp.loadavg&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
 			</image>
 			<image onErrorType="Blank">
-				<reportElement x="8" y="151" width="247" height="115"/>
-				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $F{id} + "].nodeSnmp[]&report=sinf.sysmem&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
+				<reportElement x="1" y="151" width="275" height="140"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $F{id} + "].nodeSnmp[]&report=netsnmp.memStatsNoShared&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
 			</image>
 			<image onErrorType="Blank">
-				<reportElement x="291" y="151" width="247" height="115"/>
-				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $F{id} + "].nodeSnmp[]&report=sinf.availmem&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
+				<reportElement x="280" y="151" width="275" height="140"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{id} + "%5d.nodeSnmp%5b%5d&report=netsnmp.cpuStatsFull&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
 			</image>
 		</band>
 		<band height="140">
@@ -364,6 +372,12 @@ WHERE
 						</datasetParameter>
 						<datasetParameter name="OPENNMS_URL_BASE">
 							<datasetParameterExpression><![CDATA[$P{OPENNMS_URL_BASE}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_START_DATE">
+							<datasetParameterExpression><![CDATA[$P{START_DATE}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_END_DATE">
+							<datasetParameterExpression><![CDATA[$P{END_DATE}]]></datasetParameterExpression>
 						</datasetParameter>
 						<connectionExpression><![CDATA[java.sql.DriverManager.getConnection("jdbc:mysql://" + $P{OCS_DB_IP} + "/" + $P{OCS_DB_NAME}, $P{OCS_DB_USER}, $P{OCS_DB_PASS})]]></connectionExpression>
 					</datasetRun>
@@ -394,11 +408,11 @@ WHERE
 							<textFieldExpression class="java.lang.Float"><![CDATA[0 != $F{total} ? Float.valueOf($F{free})/Float.valueOf($F{total})*Float.valueOf("100") : 0]]></textFieldExpression>
 						</textField>
 						<image onErrorType="Blank">
-							<reportElement x="291" y="0" width="247" height="115"/>
-							<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $P{id} + "].sinfLDskInstance[" + new org.opennms.features.reporting.helper.SnmpInformantOidResolver().stringToAsciiOid($F{letter}) + "]&report=sinf.diskfree&start=" + $P{DS_START_DATE}.getTime() + "&end=" + $P{DS_END_DATE}.getTime()]]></imageExpression>
+							<reportElement x="305" y="0" width="247" height="115"/>
+							<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $P{id} + "].dskIndex[" + $F{opennms_type} + "]&report=netsnmp.disk&start=" + $P{DS_START_DATE}.getTime() + "&end=" + $P{DS_END_DATE}.getTime()]]></imageExpression>
 						</image>
 						<textField>
-							<reportElement style="Table-Header" x="111" y="0" width="180" height="15"/>
+							<reportElement style="Table-Header" x="111" y="0" width="194" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{type}]]></textFieldExpression>
 						</textField>
@@ -472,78 +486,84 @@ WHERE
 						<datasetParameter name="OPENNMS_URL_BASE">
 							<datasetParameterExpression><![CDATA[$P{OPENNMS_URL_BASE}]]></datasetParameterExpression>
 						</datasetParameter>
+						<datasetParameter name="DS_START_DATE">
+							<datasetParameterExpression><![CDATA[$P{START_DATE}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_END_DATE">
+							<datasetParameterExpression><![CDATA[$P{END_DATE}]]></datasetParameterExpression>
+						</datasetParameter>
 						<connectionExpression><![CDATA[java.sql.DriverManager.getConnection("jdbc:mysql://" + $P{OCS_DB_IP} + "/" + $P{OCS_DB_NAME}, $P{OCS_DB_USER}, $P{OCS_DB_PASS})]]></connectionExpression>
 					</datasetRun>
 					<jr:listContents height="125" width="555">
 						<textField>
-							<reportElement style="Body" x="0" y="0" width="260" height="30"/>
+							<reportElement style="Table-Header" x="0" y="0" width="305" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{description}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement style="Body" x="22" y="30" width="99" height="15"/>
+							<reportElement style="Body" x="22" y="17" width="99" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{ipaddress}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement style="Body" x="22" y="45" width="99" height="15"/>
+							<reportElement style="Body" x="22" y="32" width="99" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{ipmask}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement style="Body" x="22" y="60" width="99" height="15"/>
+							<reportElement style="Body" x="22" y="47" width="99" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{ipgateway}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement style="Body" x="156" y="30" width="104" height="15"/>
+							<reportElement style="Body" x="156" y="17" width="104" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{macaddr}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="156" y="45" width="104" height="15"/>
+							<reportElement x="156" y="32" width="104" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{ipsubnet}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="156" y="60" width="104" height="15"/>
+							<reportElement x="156" y="47" width="104" height="15"/>
 							<textElement/>
 							<textFieldExpression class="java.lang.String"><![CDATA[$F{ipdhcp}]]></textFieldExpression>
 						</textField>
 						<image onErrorType="Blank">
-							<reportElement x="292" y="0" width="247" height="115"/>
-							<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $P{id} + "].sinfNetInstance[" + new org.opennms.features.reporting.helper.SnmpInformantOidResolver().stringToAsciiOid($F{description}) + "]&report=sinf.net.discards&start=" + $P{DS_START_DATE}.getTime() + "&end=" + $P{DS_END_DATE}.getTime()]]></imageExpression>
+							<reportElement x="305" y="0" width="247" height="115"/>
+							<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $P{id} + "].interfaceSnmp[" + $F{description} + "-" + $F{opennms_network} + "]&report=mib2.HCbits&start=" + $P{DS_START_DATE}.getTime() + "&end=" + $P{DS_END_DATE}.getTime()]]></imageExpression>
 						</image>
 					</jr:listContents>
 				</jr:list>
 			</componentElement>
 			<staticText>
-				<reportElement style="Body" x="0" y="50" width="22" height="15"/>
+				<reportElement style="Body" x="0" y="37" width="22" height="15"/>
 				<textElement/>
 				<text><![CDATA[IP:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Body" x="0" y="65" width="22" height="15"/>
+				<reportElement style="Body" x="0" y="52" width="22" height="15"/>
 				<textElement/>
 				<text><![CDATA[SM:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Body" x="0" y="80" width="22" height="15"/>
+				<reportElement style="Body" x="0" y="67" width="22" height="15"/>
 				<textElement/>
 				<text><![CDATA[GW:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Body" x="121" y="50" width="35" height="15"/>
+				<reportElement style="Body" x="121" y="37" width="35" height="15"/>
 				<textElement/>
 				<text><![CDATA[MAC:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Body" x="121" y="65" width="35" height="15"/>
+				<reportElement style="Body" x="121" y="52" width="35" height="15"/>
 				<textElement/>
 				<text><![CDATA[SUB:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Body" x="121" y="80" width="35" height="15"/>
+				<reportElement style="Body" x="121" y="67" width="35" height="15"/>
 				<textElement/>
 				<text><![CDATA[DHCP:]]></text>
 			</staticText>
