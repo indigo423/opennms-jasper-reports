@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="webpag-availability" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<style name="Table_Grid" mode="Transparent" forecolor="#FFFFFF" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
+		<pen lineWidth="0.0" lineColor="#FFFFFF"/>
+		<box>
+			<bottomPen lineWidth="1.0"/>
+		</box>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[new Boolean($V{style_helper_COUNT}%new Integer("5") == new Integer("0"))]]></conditionExpression>
+			<style mode="Opaque" forecolor="#999999">
+				<pen lineWidth="1.0" lineColor="#666666"/>
+				<box>
+					<bottomPen lineWidth="1.0"/>
+				</box>
+			</style>
+		</conditionalStyle>
+	</style>
+	<style name="Table_Detail" hAlign="Left" vAlign="Middle" fontName="DejaVu Sans" fontSize="10" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$F{is_current_outage} == Integer.valueOf("1")]]></conditionExpression>
+			<style mode="Opaque" backcolor="#FF3333"/>
+		</conditionalStyle>
+	</style>
+	<subDataset name="service-overall">
+		<parameter name="DS_START_TIMESTAMP" class="java.sql.Timestamp" isForPrompting="false">
+			<defaultValueExpression><![CDATA[new java.sql.Timestamp(new org.joda.time.DateTime().minusDays(14).getMillis())]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_END_TIMESTAMP" class="java.sql.Timestamp" isForPrompting="false">
+			<defaultValueExpression><![CDATA[new java.sql.Timestamp(new org.joda.time.DateTime().getMillis())]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_NODE_ID" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("1")]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_SERVICE_ID" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("1")]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_SERVICE_NAME" class="java.lang.String" isForPrompting="false">
+			<defaultValueExpression><![CDATA["WebCheck-Landing"]]></defaultValueExpression>
+		</parameter>
+		<queryString>
+			<![CDATA[SELECT
+  availability.nodeid,
+  availability.serviceid,
+  '100'::DOUBLE PRECISION - (EXTRACT(EPOCH FROM least(availability.avail_total_outage_duration,availability.total_report_duration)) / EXTRACT(EPOCH FROM availability.total_report_duration) * 100) AS availability_percent,
+  to_char(availability.real_total_outage_duration,'dd"d":HH24"h":MI"m":SS"s"') AS real_total_outage_duration,
+  to_char(least(availability.avail_total_outage_duration,availability.total_report_duration),'dd"d":HH24"h":MI"m":SS"s"') AS avail_total_outage_duration,
+  to_char(availability.total_report_duration,'dd"d":HH24"h":MI"m":SS"s"') AS total_report_duration,
+  to_char(availability.avg_real_outage_duration, 'dd"d":HH24"h":MI"m":SS"s"') AS avg_real_outage_duration,
+  to_char(availability.avg_avail_outage_duration, 'dd"d":HH24"h":MI"m":SS"s"') AS avg_avail_outage_duration,
+  availability.outage_tally
+FROM
+  (SELECT
+    outage_duration.nodeid,
+    outage_duration.serviceid,
+    SUM(outage_duration.avail_outage_duration) AS avail_total_outage_duration,
+    SUM(outage_duration.real_outage_duration) AS real_total_outage_duration,
+    AVG(outage_duration.avail_outage_duration) AS avg_avail_outage_duration,
+    AVG(outage_duration.real_outage_duration) AS avg_real_outage_duration,
+    COUNT(*) AS outage_tally,
+    outage_duration.total_report_duration
+  FROM
+    (SELECT
+      outage_overlap.nodeid,
+      outage_overlap.serviceid,
+      outage_overlap.ifregainedservice - outage_overlap.iflostservice AS real_outage_duration,
+      outage_overlap.avail_end - outage_overlap.avail_start AS avail_outage_duration,
+      outage_overlap.report_end - outage_overlap.report_start AS total_report_duration
+    FROM
+      (SELECT
+        public.outages.nodeid,
+        public.outages.serviceid,
+        '$P!{DS_START_TIMESTAMP}'::TIMESTAMP AS report_start,
+        '$P!{DS_END_TIMESTAMP}'::TIMESTAMP AS report_end,
+        CASE
+          WHEN public.outages.ifregainedservice IS NULL THEN CAST('1' AS INTEGER)
+          ELSE CAST('0' AS INTEGER)
+        END AS is_current_outage,
+        -- real service outage
+        public.outages.iflostservice,
+        COALESCE(public.outages.ifregainedservice, now()) AS ifregainedservice,
+        -- for correct availability calculation, cutting start and end for overlapping time
+        CASE
+          WHEN public.outages.iflostservice < '$P!{DS_START_TIMESTAMP}'::TIMESTAMP THEN '$P!{DS_START_TIMESTAMP}'::TIMESTAMP
+          ELSE public.outages.iflostservice
+        END AS avail_start,
+        CASE
+          WHEN public.outages.ifregainedservice > '$P!{DS_END_TIMESTAMP}'::TIMESTAMP  THEN '$P!{DS_END_TIMESTAMP}'::TIMESTAMP
+          ELSE COALESCE(public.outages.ifregainedservice, now())
+        END AS avail_end
+      FROM
+        public.outages
+      WHERE
+        (public.outages.iflostservice, public.outages.ifregainedservice) OVERLAPS ('$P!{DS_START_TIMESTAMP}'::TIMESTAMP, '$P!{DS_END_TIMESTAMP}'::TIMESTAMP)
+        AND public.outages.serviceid = '$P!{DS_SERVICE_ID}'
+        AND public.outages.nodeid = '$P!{DS_NODE_ID}'
+      ) AS outage_overlap
+    ) AS outage_duration
+    GROUP BY
+      outage_duration.nodeid,
+      outage_duration.serviceid,
+      outage_duration.total_report_duration
+  ) AS availability]]>
+		</queryString>
+		<field name="nodeid" class="java.lang.Integer"/>
+		<field name="serviceid" class="java.lang.Integer"/>
+		<field name="availability_percent" class="java.lang.Double"/>
+		<field name="real_total_outage_duration" class="java.lang.String"/>
+		<field name="avail_total_outage_duration" class="java.lang.String"/>
+		<field name="total_report_duration" class="java.lang.String"/>
+		<field name="avg_real_outage_duration" class="java.lang.String"/>
+		<field name="avg_avail_outage_duration" class="java.lang.String"/>
+		<field name="outage_tally" class="java.lang.Long"/>
+		<variable name="style_helper_COUNT" class="java.lang.Integer" calculation="Count"/>
+	</subDataset>
+	<subDataset name="service-detail">
+		<parameter name="DS_NODE_ID" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("1")]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_SERVICE_ID" class="java.lang.Integer" isForPrompting="false">
+			<defaultValueExpression><![CDATA[Integer.valueOf("1")]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_START_TIMESTAMP" class="java.sql.Timestamp" isForPrompting="false">
+			<defaultValueExpression><![CDATA[new java.sql.Timestamp(new org.joda.time.DateTime().minusDays(14).getMillis())]]></defaultValueExpression>
+		</parameter>
+		<parameter name="DS_END_TIMESTAMP" class="java.sql.Timestamp" isForPrompting="false">
+			<defaultValueExpression><![CDATA[new java.sql.Timestamp(new org.joda.time.DateTime().getMillis())]]></defaultValueExpression>
+		</parameter>
+		<queryString>
+			<![CDATA[SELECT
+  public.outages.iflostservice,
+  public.outages.svclosteventid,
+  COALESCE(public.outages.ifregainedservice,now()) AS ifregainedservice,
+  to_char(COALESCE(public.outages.ifregainedservice,now()) - public.outages.iflostservice, 'dd"d":HH24"h":MI"m":SS"s"') AS duration,
+  CASE
+    WHEN public.outages.ifregainedservice IS NULL THEN CAST('1' AS INTEGER)
+    ELSE CAST('0' AS INTEGER)
+  END AS is_current_outage,
+  public.outages.serviceid
+FROM
+    public.outages
+JOIN
+    public.events
+ON
+    public.outages.svclosteventid = public.events.eventid
+WHERE
+  public.outages.nodeid = '$P!{DS_NODE_ID}'
+  AND public.outages.serviceid = '$P!{DS_SERVICE_ID}'
+  AND (public.outages.iflostservice, public.outages.ifregainedservice) OVERLAPS ('$P!{DS_START_TIMESTAMP}'::TIMESTAMP, '$P!{DS_END_TIMESTAMP}'::TIMESTAMP)
+ORDER BY
+  public.outages.iflostservice]]>
+		</queryString>
+		<field name="iflostservice" class="java.sql.Timestamp"/>
+		<field name="svclosteventid" class="java.lang.Integer"/>
+		<field name="ifregainedservice" class="java.sql.Timestamp"/>
+		<field name="duration" class="java.lang.String"/>
+		<field name="is_current_outage" class="java.lang.Integer"/>
+		<field name="serviceid" class="java.lang.Integer"/>
+		<variable name="style_helper_COUNT" class="java.lang.Integer" calculation="Count"/>
+	</subDataset>
+	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["/opt/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NODE_LABEL" class="java.lang.String">
+		<parameterDescription><![CDATA[Node label]]></parameterDescription>
+		<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="START_DATE" class="java.util.Date">
+		<parameterDescription><![CDATA[Report start date]]></parameterDescription>
+		<defaultValueExpression><![CDATA[new org.joda.time.DateTime().minusDays(14).toDate()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="END_DATE" class="java.util.Date">
+		<parameterDescription><![CDATA[Report end date]]></parameterDescription>
+		<defaultValueExpression><![CDATA[new org.joda.time.DateTime().toDate()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="OPENNMS_URL_BASE" class="java.lang.String">
+		<parameterDescription><![CDATA[Base URL for OpenNMS Webapp]]></parameterDescription>
+		<defaultValueExpression><![CDATA["http://localhost:8980/opennms"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="LOCATION" class="java.lang.String">
+		<parameterDescription><![CDATA[Location for web page monitoring]]></parameterDescription>
+		<defaultValueExpression><![CDATA["Asensbruk"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="SERVICE" class="java.lang.String">
+		<parameterDescription><![CDATA[Availability and responsetime for service repor]]></parameterDescription>
+		<defaultValueExpression><![CDATA["WebCheck-Landing"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="RESPONSE_REPORT" class="java.lang.String">
+		<defaultValueExpression><![CDATA["webcheck.landing"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+  public.node.nodeid,
+  public.node.nodelabel,
+  public.service.serviceid,
+  public.service.servicename,
+  public.ifservices.ipaddr
+FROM
+  public.node
+JOIN
+  public.ifservices
+ON
+  public.node.nodeid = public.ifservices.nodeid
+JOIN
+  public.service
+ON
+  public.service.serviceid = public.ifservices.serviceid
+WHERE
+  public.node.nodelabel LIKE '$P!{NODE_LABEL}' AND
+  public.service.servicename = 'WebCheck-Landing' AND
+  public.node.nodetype = 'A'
+ORDER BY
+  public.node.nodelabel,
+  public.service.servicename,
+  public.ifservices.ipaddr]]>
+	</queryString>
+	<field name="nodeid" class="java.lang.Integer"/>
+	<field name="nodelabel" class="java.lang.String"/>
+	<field name="serviceid" class="java.lang.Integer"/>
+	<field name="servicename" class="java.lang.String"/>
+	<field name="ipaddr" class="java.lang.String"/>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="92" splitType="Stretch">
+			<image>
+				<reportElement x="391" y="0" width="164" height="49"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement style="Body" x="0" y="54" width="62" height="15"/>
+				<textElement/>
+				<text><![CDATA[Start date:]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="85" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<staticText>
+				<reportElement style="Body" x="0" y="69" width="62" height="15"/>
+				<textElement/>
+				<text><![CDATA[End date:]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Body" x="62" y="54" width="329" height="15"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{START_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Body" x="62" y="69" width="329" height="15"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{END_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Sub-header" x="0" y="0" width="391" height="49"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Web page service statistics from location " + $P{LOCATION}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="80" splitType="Stretch">
+			<staticText>
+				<reportElement style="Table-Header" x="384" y="25" width="170" height="23"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[Total Outage Duration]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Table-Header" x="300" y="25" width="85" height="23"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[MTTRS]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Table-Body" x="0" y="48" width="156" height="17"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{servicename}]]></textFieldExpression>
+			</textField>
+			<textField pattern="###0.00">
+				<reportElement style="Table-Body" x="386" y="48" width="169" height="17"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["no outage"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Table-Header" x="156" y="25" width="144" height="23"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[Availability in %]]></text>
+			</staticText>
+			<textField pattern="###0.00">
+				<reportElement style="Table-Body" x="156" y="48" width="144" height="17"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["100.00"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Table-Body" x="300" y="48" width="86" height="17"/>
+				<textElement textAlignment="Center"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["no outage"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Table-Header" x="0" y="25" width="156" height="23"/>
+				<textElement verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[Availability statistics]]></text>
+			</staticText>
+			<rectangle radius="5">
+				<reportElement mode="Opaque" x="0" y="0" width="554" height="20" backcolor="#009700"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<textField>
+				<reportElement style="Section" x="5" y="0" width="545" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Web page service statistics " + $F{nodelabel}]]></textFieldExpression>
+			</textField>
+			<componentElement>
+				<reportElement key="table 1" mode="Opaque" x="0" y="25" width="555" height="40"/>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="service-overall">
+						<datasetParameter name="DS_SERVICE_ID">
+							<datasetParameterExpression><![CDATA[$F{serviceid}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_START_TIMESTAMP">
+							<datasetParameterExpression><![CDATA[new java.sql.Timestamp($P{START_DATE}.getTime())]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_END_TIMESTAMP">
+							<datasetParameterExpression><![CDATA[new java.sql.Timestamp($P{END_DATE}.getTime())]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_SERVICE_NAME">
+							<datasetParameterExpression><![CDATA[$F{servicename}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_NODE_ID">
+							<datasetParameterExpression><![CDATA[$F{nodeid}]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="156">
+						<jr:columnHeader style="Table-Header" height="23" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="0" y="0" width="156" height="23"/>
+								<textElement verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[Availability statistics]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table-Body" height="17" rowSpan="1">
+							<textField>
+								<reportElement style="Table-Body" x="0" y="0" width="156" height="17"/>
+								<textElement verticalAlignment="Middle"/>
+								<textFieldExpression class="java.lang.String"><![CDATA[$P{DS_SERVICE_NAME}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="85">
+						<jr:columnHeader style="Table-Header" height="23" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="0" y="0" width="85" height="23"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[MTTRS]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table-Body" height="17" rowSpan="1">
+							<textField>
+								<reportElement style="Table-Body" x="0" y="0" width="85" height="17"/>
+								<textElement textAlignment="Center"/>
+								<textFieldExpression class="java.lang.String"><![CDATA[$F{avg_avail_outage_duration}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="144">
+						<jr:columnHeader height="23" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="0" y="0" width="144" height="23"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[Availability in %]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table-Body" height="17" rowSpan="1">
+							<textField pattern="###0.00">
+								<reportElement style="Table-Body" x="0" y="0" width="144" height="17"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression class="java.lang.Double"><![CDATA[$F{availability_percent}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="170">
+						<jr:columnHeader height="23" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="0" y="0" width="170" height="23"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[Total Outage Duration]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table-Body" height="17" rowSpan="1">
+							<textField pattern="###0.00">
+								<reportElement style="Table-Body" x="0" y="0" width="170" height="17"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression class="java.lang.String"><![CDATA[$F{avail_total_outage_duration}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+		<band height="170">
+			<image onErrorType="Blank">
+				<reportElement x="0" y="50" width="555" height="100"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{nodeid} + "%5d.responseTime%5b" + $F{ipaddr} + "%5d&report=" + $P{RESPONSE_REPORT} + "&start=" + new org.joda.time.DateTime().minusDays(1).getMillis() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Response time for " + $F{servicename}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Sub-sub-sub-header" x="0" y="25" width="35" height="20"/>
+				<textElement/>
+				<text><![CDATA[Time:]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="35" y="25" width="219" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[new org.joda.time.DateTime().minusDays(1).toDate().toString()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="254" y="25" width="219" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[new org.joda.time.DateTime().toDate().toString()]]></textFieldExpression>
+			</textField>
+		</band>
+		<band height="170">
+			<image onErrorType="Blank">
+				<reportElement x="0" y="50" width="555" height="100"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node%5b" + $F{nodeid} + "%5d.responseTime%5b" + $F{ipaddr} + "%5d&report="+ $P{RESPONSE_REPORT} +"&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
+			</image>
+			<textField>
+				<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Response time for " + $F{servicename}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="253" y="25" width="219" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{END_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="34" y="25" width="219" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{START_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Sub-sub-sub-header" x="-1" y="25" width="35" height="20"/>
+				<textElement/>
+				<text><![CDATA[Time:]]></text>
+			</staticText>
+		</band>
+		<band height="85">
+			<textField>
+				<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Outages measured for " + $F{servicename}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Table-Header" x="0" y="45" width="556" height="24"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font size="10"/>
+				</textElement>
+				<text><![CDATA[No outage recorded]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="254" y="25" width="219" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{END_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Sub-sub-sub-header" x="35" y="25" width="219" height="20"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{START_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Sub-sub-sub-header" x="0" y="25" width="35" height="20"/>
+				<textElement/>
+				<text><![CDATA[Time:]]></text>
+			</staticText>
+			<componentElement>
+				<reportElement key="table 1" x="0" y="45" width="555" height="24"/>
+				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+					<datasetRun subDataset="service-detail">
+						<datasetParameter name="DS_NODE_ID">
+							<datasetParameterExpression><![CDATA[$F{nodeid}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_SERVICE_ID">
+							<datasetParameterExpression><![CDATA[$F{serviceid}]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_START_TIMESTAMP">
+							<datasetParameterExpression><![CDATA[new java.sql.Timestamp($P{START_DATE}.getTime())]]></datasetParameterExpression>
+						</datasetParameter>
+						<datasetParameter name="DS_END_TIMESTAMP">
+							<datasetParameterExpression><![CDATA[new java.sql.Timestamp($P{END_DATE}.getTime())]]></datasetParameterExpression>
+						</datasetParameter>
+						<connectionExpression><![CDATA[$P{REPORT_CONNECTION}]]></connectionExpression>
+					</datasetRun>
+					<jr:column width="221">
+						<jr:columnHeader style="Table-Header" height="24" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="7" y="0" width="214" height="24"/>
+								<textElement verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[Service Unresponsive]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_Grid" height="18" rowSpan="1">
+							<textField>
+								<reportElement style="Table_Detail" x="7" y="0" width="214" height="18"/>
+								<textElement verticalAlignment="Middle"/>
+								<textFieldExpression class="java.util.Date"><![CDATA[$F{iflostservice}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="213">
+						<jr:columnHeader style="Table-Header" height="24" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="0" y="0" width="213" height="24"/>
+								<textElement verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[Service regained]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_Grid" height="18" rowSpan="1">
+							<textField>
+								<reportElement style="Table_Detail" x="0" y="0" width="213" height="18"/>
+								<textElement verticalAlignment="Middle"/>
+								<textFieldExpression class="java.util.Date"><![CDATA[$F{ifregainedservice}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+					<jr:column width="121">
+						<jr:columnHeader height="24" rowSpan="1">
+							<staticText>
+								<reportElement style="Table-Header" x="0" y="0" width="120" height="24"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle">
+									<font size="10"/>
+								</textElement>
+								<text><![CDATA[Duration]]></text>
+							</staticText>
+						</jr:columnHeader>
+						<jr:detailCell style="Table_Grid" height="18" rowSpan="1">
+							<textField pattern="###0.00">
+								<reportElement style="Table_Detail" x="0" y="0" width="121" height="18"/>
+								<textElement textAlignment="Center" verticalAlignment="Middle"/>
+								<textFieldExpression class="java.lang.String"><![CDATA[$F{duration}]]></textFieldExpression>
+							</textField>
+						</jr:detailCell>
+					</jr:column>
+				</jr:table>
+			</componentElement>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="17" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="0" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="446" y="1" width="80" height="14"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="526" y="1" width="24" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

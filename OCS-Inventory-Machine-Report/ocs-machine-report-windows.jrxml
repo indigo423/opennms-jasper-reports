@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ocs-machine-report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="744"/>
+	<property name="ireport.y" value="639"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -438,6 +438,13 @@ WHERE
 							<textElement/>
 							<text><![CDATA[Drive:]]></text>
 						</staticText>
+						<textField>
+							<reportElement x="1" y="55" width="290" height="60"/>
+							<textElement>
+								<font size="5"/>
+							</textElement>
+							<textFieldExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $P{id} + "].sinfLDskInstance[" + new org.opennms.netmgt.jasper.helper.SnmpInformantOidResolver().stringToAsciiOid($F{letter}) + "]&report=sinf.diskfree&start=" + $P{DS_START_DATE}.getTime() + "&end=" + $P{DS_END_DATE}.getTime()]]></textFieldExpression>
+						</textField>
 					</jr:listContents>
 				</jr:list>
 			</componentElement>
