@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="webpag-availability" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="webpage-statistics" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="0"/>
-	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<property name="ireport.y" value="386"/>
+	<template><![CDATA["/usr/share/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="Table_Grid" mode="Transparent" forecolor="#FFFFFF" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
 		<pen lineWidth="0.0" lineColor="#FFFFFF"/>
 		<box>
@@ -162,7 +162,7 @@ ORDER BY
 		<variable name="style_helper_COUNT" class="java.lang.Integer" calculation="Count"/>
 	</subDataset>
 	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
-		<defaultValueExpression><![CDATA["/opt/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["/usr/share/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="NODE_LABEL" class="java.lang.String">
 		<parameterDescription><![CDATA[Node label]]></parameterDescription>
@@ -189,7 +189,7 @@ ORDER BY
 		<defaultValueExpression><![CDATA["WebCheck-Landing"]]></defaultValueExpression>
 	</parameter>
 	<parameter name="RESPONSE_REPORT" class="java.lang.String">
-		<defaultValueExpression><![CDATA["webcheck.landing"]]></defaultValueExpression>
+		<defaultValueExpression><![CDATA["webcheck.landing.jasper"]]></defaultValueExpression>
 	</parameter>
 	<queryString>
 		<![CDATA[SELECT
@@ -273,14 +273,14 @@ ORDER BY
 	<detail>
 		<band height="80" splitType="Stretch">
 			<staticText>
-				<reportElement style="Table-Header" x="384" y="25" width="170" height="23"/>
+				<reportElement style="Table-Header" x="402" y="25" width="152" height="23"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="10"/>
 				</textElement>
 				<text><![CDATA[Total Outage Duration]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Table-Header" x="300" y="25" width="85" height="23"/>
+				<reportElement style="Table-Header" x="300" y="25" width="102" height="23"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="10"/>
 				</textElement>
@@ -292,7 +292,7 @@ ORDER BY
 				<textFieldExpression class="java.lang.String"><![CDATA[$F{servicename}]]></textFieldExpression>
 			</textField>
 			<textField pattern="###0.00">
-				<reportElement style="Table-Body" x="386" y="48" width="169" height="17"/>
+				<reportElement style="Table-Body" x="402" y="48" width="152" height="17"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle"/>
 				<textFieldExpression class="java.lang.String"><![CDATA["no outage"]]></textFieldExpression>
 			</textField>
@@ -309,7 +309,7 @@ ORDER BY
 				<textFieldExpression class="java.lang.String"><![CDATA["100.00"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement style="Table-Body" x="300" y="48" width="86" height="17"/>
+				<reportElement style="Table-Body" x="300" y="48" width="102" height="17"/>
 				<textElement textAlignment="Center"/>
 				<textFieldExpression class="java.lang.String"><![CDATA["no outage"]]></textFieldExpression>
 			</textField>
@@ -370,10 +370,10 @@ ORDER BY
 							</textField>
 						</jr:detailCell>
 					</jr:column>
-					<jr:column width="85">
+					<jr:column width="102">
 						<jr:columnHeader style="Table-Header" height="23" rowSpan="1">
 							<staticText>
-								<reportElement style="Table-Header" x="0" y="0" width="85" height="23"/>
+								<reportElement style="Table-Header" x="0" y="0" width="102" height="23"/>
 								<textElement textAlignment="Center" verticalAlignment="Middle">
 									<font size="10"/>
 								</textElement>
@@ -382,7 +382,7 @@ ORDER BY
 						</jr:columnHeader>
 						<jr:detailCell style="Table-Body" height="17" rowSpan="1">
 							<textField>
-								<reportElement style="Table-Body" x="0" y="0" width="85" height="17"/>
+								<reportElement style="Table-Body" x="0" y="0" width="102" height="17"/>
 								<textElement textAlignment="Center"/>
 								<textFieldExpression class="java.lang.String"><![CDATA[$F{avg_avail_outage_duration}]]></textFieldExpression>
 							</textField>
@@ -406,10 +406,10 @@ ORDER BY
 							</textField>
 						</jr:detailCell>
 					</jr:column>
-					<jr:column width="170">
+					<jr:column width="152">
 						<jr:columnHeader height="23" rowSpan="1">
 							<staticText>
-								<reportElement style="Table-Header" x="0" y="0" width="170" height="23"/>
+								<reportElement style="Table-Header" x="0" y="0" width="152" height="23"/>
 								<textElement textAlignment="Center" verticalAlignment="Middle">
 									<font size="10"/>
 								</textElement>
@@ -418,7 +418,7 @@ ORDER BY
 						</jr:columnHeader>
 						<jr:detailCell style="Table-Body" height="17" rowSpan="1">
 							<textField pattern="###0.00">
-								<reportElement style="Table-Body" x="0" y="0" width="170" height="17"/>
+								<reportElement style="Table-Body" x="0" y="0" width="152" height="17"/>
 								<textElement textAlignment="Center" verticalAlignment="Middle"/>
 								<textFieldExpression class="java.lang.String"><![CDATA[$F{avail_total_outage_duration}]]></textFieldExpression>
 							</textField>
@@ -435,7 +435,7 @@ ORDER BY
 			<textField>
 				<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
 				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA["Response time for " + $F{servicename}]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA["Response time last 24 hours for " + $F{servicename}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement style="Sub-sub-sub-header" x="0" y="25" width="35" height="20"/>
@@ -461,7 +461,7 @@ ORDER BY
 			<textField>
 				<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
 				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA["Response time for " + $F{servicename}]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA["Response time report time range for " + $F{servicename}]]></textFieldExpression>
 			</textField>
 			<textField>
 				<reportElement style="Sub-sub-sub-header" x="253" y="25" width="219" height="20"/>
@@ -536,7 +536,7 @@ ORDER BY
 							</staticText>
 						</jr:columnHeader>
 						<jr:detailCell style="Table_Grid" height="18" rowSpan="1">
-							<textField>
+							<textField pattern="dd.MM.yyyy HH:mm:ss">
 								<reportElement style="Table_Detail" x="7" y="0" width="214" height="18"/>
 								<textElement verticalAlignment="Middle"/>
 								<textFieldExpression class="java.util.Date"><![CDATA[$F{iflostservice}]]></textFieldExpression>
@@ -554,7 +554,7 @@ ORDER BY
 							</staticText>
 						</jr:columnHeader>
 						<jr:detailCell style="Table_Grid" height="18" rowSpan="1">
-							<textField>
+							<textField pattern="dd.MM.yyyy HH:mm:ss">
 								<reportElement style="Table_Detail" x="0" y="0" width="213" height="18"/>
 								<textElement verticalAlignment="Middle"/>
 								<textFieldExpression class="java.util.Date"><![CDATA[$F{ifregainedservice}]]></textFieldExpression>

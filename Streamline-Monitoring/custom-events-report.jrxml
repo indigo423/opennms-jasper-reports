@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Custom-event-report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
+	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
+	<style name="severity">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$F{eventseverity} == 3]]></conditionExpression>
+			<style backcolor="#CCFFCC"/>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$F{eventseverity} == 5]]></conditionExpression>
+			<style backcolor="#FFCC99"/>
+		</conditionalStyle>
+	</style>
+	<parameter name="COMPANY_LOGO" class="java.lang.String" isForPrompting="false">
+		<defaultValueExpression><![CDATA["/opt/opennms/etc/report-templates/assets/images/company-logo.png"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="NODE_LABEL" class="java.lang.String">
+		<parameterDescription><![CDATA[Node label]]></parameterDescription>
+		<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="START_DATE" class="java.util.Date">
+		<parameterDescription><![CDATA[Report start date]]></parameterDescription>
+		<defaultValueExpression><![CDATA[new org.joda.time.DateTime().minusDays(14).toDate()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="END_DATE" class="java.util.Date">
+		<parameterDescription><![CDATA[Report end date]]></parameterDescription>
+		<defaultValueExpression><![CDATA[new org.joda.time.DateTime().toDate()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="EVENT_DESCRIPTION" class="java.lang.String">
+		<parameterDescription><![CDATA[Event description should contain]]></parameterDescription>
+		<defaultValueExpression><![CDATA["%"]]></defaultValueExpression>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+  node.nodelabel,
+  events.eventlogmsg,
+  to_char(events.eventtime, 'DD.MM.YYYY HH24:MI:SS') AS eventtime,
+  events.eventseverity,
+  node.nodeid
+FROM
+  events
+JOIN
+  node
+ON
+  events.nodeid = node.nodeid
+WHERE
+  node.nodetype = 'A' AND
+  node.nodelabel like '$P!{NODE_LABEL}' AND
+  events.eventdescr like '%$P!{EVENT_DESCRIPTION}%' AND
+  events.eventtime > '$P!{START_DATE}' AND
+  events.eventtime < '$P!{END_DATE}'
+ORDER BY
+  node.nodelabel,
+  events.eventtime DESC]]>
+	</queryString>
+	<field name="nodelabel" class="java.lang.String"/>
+	<field name="eventlogmsg" class="java.lang.String"/>
+	<field name="eventtime" class="java.lang.String"/>
+	<field name="eventseverity" class="java.lang.Integer"/>
+	<field name="nodeid" class="java.lang.Integer"/>
+	<group name="Node" isStartNewPage="true" isReprintHeaderOnEachPage="true">
+		<groupExpression><![CDATA[$F{nodeid}]]></groupExpression>
+		<groupHeader>
+			<band height="23">
+				<rectangle radius="5">
+					<reportElement mode="Opaque" x="0" y="1" width="555" height="20" backcolor="#009700"/>
+					<graphicElement>
+						<pen lineWidth="0.0"/>
+					</graphicElement>
+				</rectangle>
+				<textField>
+					<reportElement style="Section" x="5" y="1" width="550" height="20"/>
+					<textElement/>
+					<textFieldExpression class="java.lang.String"><![CDATA["Events filtered by node: " + $F{nodelabel}]]></textFieldExpression>
+				</textField>
+			</band>
+		</groupHeader>
+		<groupFooter>
+			<band/>
+		</groupFooter>
+	</group>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band splitType="Stretch"/>
+	</title>
+	<pageHeader>
+		<band height="66" splitType="Stretch">
+			<image>
+				<reportElement x="391" y="0" width="164" height="49"/>
+				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement style="Title" x="0" y="0" width="391" height="13"/>
+				<textElement/>
+				<text><![CDATA[Customized event report]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="64" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement style="Body" x="62" y="49" width="329" height="15"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{END_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement style="Body" x="0" y="34" width="62" height="15"/>
+				<textElement/>
+				<text><![CDATA[Start date:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement style="Body" x="0" y="49" width="62" height="15"/>
+				<textElement/>
+				<text><![CDATA[End date:]]></text>
+			</staticText>
+			<textField>
+				<reportElement style="Body" x="62" y="34" width="329" height="15"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[$P{START_DATE}.toString()]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="Table-Header" x="0" y="13" width="391" height="21"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Event description filter: " + $P{EVENT_DESCRIPTION}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="26" splitType="Stretch">
+			<textField>
+				<reportElement style="severity" mode="Opaque" x="89" y="0" width="466" height="25"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{eventlogmsg}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="severity" mode="Opaque" x="0" y="0" width="89" height="25"/>
+				<textElement verticalAlignment="Middle">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{eventtime}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="16" splitType="Stretch">
+			<line>
+				<reportElement x="0" y="0" width="555" height="1"/>
+				<graphicElement>
+					<pen lineWidth="1.5"/>
+				</graphicElement>
+			</line>
+			<textField>
+				<reportElement x="446" y="1" width="80" height="14"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression class="java.lang.String"><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
+			</textField>
+			<textField evaluationTime="Report">
+				<reportElement x="526" y="1" width="24" height="14"/>
+				<textElement/>
+				<textFieldExpression class="java.lang.String"><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
