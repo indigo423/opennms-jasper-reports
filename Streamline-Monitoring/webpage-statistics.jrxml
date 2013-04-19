@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="webpage-statistics" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="386"/>
+	<property name="ireport.y" value="22"/>
 	<template><![CDATA["/usr/share/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="Table_Grid" mode="Transparent" forecolor="#FFFFFF" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false">
 		<pen lineWidth="0.0" lineColor="#FFFFFF"/>
@@ -229,7 +229,7 @@ ORDER BY
 		<band splitType="Stretch"/>
 	</title>
 	<pageHeader>
-		<band height="92" splitType="Stretch">
+		<band height="91" splitType="Stretch">
 			<image>
 				<reportElement x="391" y="0" width="164" height="49"/>
 				<imageExpression class="java.lang.String"><![CDATA[$P{COMPANY_LOGO}]]></imageExpression>
@@ -271,68 +271,68 @@ ORDER BY
 		<band splitType="Stretch"/>
 	</columnHeader>
 	<detail>
-		<band height="80" splitType="Stretch">
+		<band height="77" splitType="Stretch">
 			<staticText>
-				<reportElement style="Table-Header" x="402" y="25" width="152" height="23"/>
+				<reportElement style="Table-Header" x="402" y="30" width="152" height="23"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="10"/>
 				</textElement>
 				<text><![CDATA[Total Outage Duration]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Table-Header" x="300" y="25" width="102" height="23"/>
+				<reportElement style="Table-Header" x="300" y="30" width="102" height="23"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="10"/>
 				</textElement>
 				<text><![CDATA[MTTRS]]></text>
 			</staticText>
 			<textField>
-				<reportElement style="Table-Body" x="0" y="48" width="156" height="17"/>
+				<reportElement style="Table-Body" x="0" y="53" width="156" height="17"/>
 				<textElement verticalAlignment="Middle"/>
 				<textFieldExpression class="java.lang.String"><![CDATA[$F{servicename}]]></textFieldExpression>
 			</textField>
 			<textField pattern="###0.00">
-				<reportElement style="Table-Body" x="402" y="48" width="152" height="17"/>
+				<reportElement style="Table-Body" x="402" y="53" width="152" height="17"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle"/>
 				<textFieldExpression class="java.lang.String"><![CDATA["no outage"]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement style="Table-Header" x="156" y="25" width="144" height="23"/>
+				<reportElement style="Table-Header" x="156" y="30" width="144" height="23"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font size="10"/>
 				</textElement>
 				<text><![CDATA[Availability in %]]></text>
 			</staticText>
 			<textField pattern="###0.00">
-				<reportElement style="Table-Body" x="156" y="48" width="144" height="17"/>
+				<reportElement style="Table-Body" x="156" y="53" width="144" height="17"/>
 				<textElement textAlignment="Center" verticalAlignment="Middle"/>
 				<textFieldExpression class="java.lang.String"><![CDATA["100.00"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement style="Table-Body" x="300" y="48" width="102" height="17"/>
+				<reportElement style="Table-Body" x="300" y="53" width="102" height="17"/>
 				<textElement textAlignment="Center"/>
 				<textFieldExpression class="java.lang.String"><![CDATA["no outage"]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement style="Table-Header" x="0" y="25" width="156" height="23"/>
+				<reportElement style="Table-Header" x="0" y="30" width="156" height="23"/>
 				<textElement verticalAlignment="Middle">
 					<font size="10"/>
 				</textElement>
 				<text><![CDATA[Availability statistics]]></text>
 			</staticText>
 			<rectangle radius="5">
-				<reportElement mode="Opaque" x="0" y="0" width="554" height="20" backcolor="#009700"/>
+				<reportElement mode="Opaque" x="0" y="5" width="554" height="20" backcolor="#009700"/>
 				<graphicElement>
 					<pen lineWidth="0.0"/>
 				</graphicElement>
 			</rectangle>
 			<textField>
-				<reportElement style="Section" x="5" y="0" width="545" height="20"/>
+				<reportElement style="Section" x="5" y="5" width="545" height="20"/>
 				<textElement/>
-				<textFieldExpression class="java.lang.String"><![CDATA["Web page service statistics " + $F{nodelabel}]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA["Web page service statistics: " + $F{nodelabel}]]></textFieldExpression>
 			</textField>
 			<componentElement>
-				<reportElement key="table 1" mode="Opaque" x="0" y="25" width="555" height="40"/>
+				<reportElement key="table 1" mode="Opaque" x="0" y="30" width="555" height="40"/>
 				<jr:table xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
 					<datasetRun subDataset="service-overall">
 						<datasetParameter name="DS_SERVICE_ID">
@@ -426,6 +426,9 @@ ORDER BY
 					</jr:column>
 				</jr:table>
 			</componentElement>
+			<break>
+				<reportElement x="0" y="0" width="100" height="1"/>
+			</break>
 		</band>
 		<band height="170">
 			<image onErrorType="Blank">
@@ -479,7 +482,7 @@ ORDER BY
 				<text><![CDATA[Time:]]></text>
 			</staticText>
 		</band>
-		<band height="85">
+		<band height="79">
 			<textField>
 				<reportElement style="Table-Header" x="0" y="0" width="555" height="20"/>
 				<textElement/>
