@@ -2,7 +2,7 @@
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ocs-machine-report" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
 	<property name="ireport.zoom" value="2.0"/>
 	<property name="ireport.x" value="0"/>
-	<property name="ireport.y" value="639"/>
+	<property name="ireport.y" value="0"/>
 	<template><![CDATA["/opt/opennms/etc/report-templates/assets/styles/defaultStyles.jrtx"]]></template>
 	<style name="table">
 		<box>
@@ -245,13 +245,13 @@ WHERE
 	<detail>
 		<band height="267" splitType="Stretch">
 			<rectangle radius="5">
-				<reportElement mode="Opaque" x="0" y="0" width="555" height="20" backcolor="#009700"/>
+				<reportElement mode="Opaque" x="0" y="2" width="555" height="20" backcolor="#009700"/>
 				<graphicElement>
 					<pen lineWidth="0.0"/>
 				</graphicElement>
 			</rectangle>
 			<staticText>
-				<reportElement style="Section" x="5" y="0" width="545" height="20"/>
+				<reportElement style="Section" x="5" y="2" width="545" height="20"/>
 				<textElement/>
 				<text><![CDATA[System information]]></text>
 			</staticText>
@@ -350,6 +350,9 @@ WHERE
 				<reportElement x="291" y="151" width="247" height="115"/>
 				<imageExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $F{id} + "].nodeSnmp[]&report=sinf.availmem&start=" + $P{START_DATE}.getTime() + "&end=" + $P{END_DATE}.getTime()]]></imageExpression>
 			</image>
+			<break>
+				<reportElement x="0" y="0" width="100" height="1"/>
+			</break>
 		</band>
 		<band height="140">
 			<componentElement>
@@ -438,13 +441,6 @@ WHERE
 							<textElement/>
 							<text><![CDATA[Drive:]]></text>
 						</staticText>
-						<textField>
-							<reportElement x="1" y="55" width="290" height="60"/>
-							<textElement>
-								<font size="5"/>
-							</textElement>
-							<textFieldExpression class="java.lang.String"><![CDATA[$P{OPENNMS_URL_BASE} + "/graph/graph.png?resourceId=node[" + $P{id} + "].sinfLDskInstance[" + new org.opennms.netmgt.jasper.helper.SnmpInformantOidResolver().stringToAsciiOid($F{letter}) + "]&report=sinf.diskfree&start=" + $P{DS_START_DATE}.getTime() + "&end=" + $P{DS_END_DATE}.getTime()]]></textFieldExpression>
-						</textField>
 					</jr:listContents>
 				</jr:list>
 			</componentElement>
