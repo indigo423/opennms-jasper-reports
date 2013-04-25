@@ -327,8 +327,10 @@ ORDER BY
 				</graphicElement>
 			</rectangle>
 			<textField>
-				<reportElement style="Section" x="5" y="5" width="545" height="20"/>
-				<textElement/>
+				<reportElement style="Body" x="5" y="5" width="545" height="20" forecolor="#FFFFFF"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
 				<textFieldExpression class="java.lang.String"><![CDATA["Web page service statistics: " + $F{nodelabel}]]></textFieldExpression>
 			</textField>
 			<componentElement>
